@@ -7,3 +7,7 @@ chfiles="/home/user/.bashrc /home/user/.bash_profile /home/user/.bash_login /hom
 touch $chfiles || true
 chown -f root:root $chfiles || true
 chattr -f +i $chfiles || true
+
+
+# end of script
+exit 0
