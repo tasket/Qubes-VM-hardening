@@ -5,5 +5,5 @@
 ##  to prevent privilege escalation attacks  ##
 chfiles="/home/user/.bashrc /home/user/.bash_profile /home/user/.bash_login /home/user/.bash_logout /home/user/.profile"
 touch $chfiles || true
-chown -f root:root $chfiles
-chattr -f +i $chfiles
+chown -f root:root $chfiles || true
+chattr -f +i $chfiles || true
