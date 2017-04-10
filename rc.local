@@ -1,13 +1,20 @@
 #!/bin/sh -e
 # Debian: /etc/rc.local
 
-##  Protect sh and bash init scripts         ##
-##  to prevent privilege escalation attacks  ##
-chfiles="/home/user/.bashrc /home/user/.bash_profile /home/user/.bash_login /home/user/.bash_logout /home/user/.profile"
-touch $chfiles || true
-chown -f root:root $chfiles || true
-chattr -f +i $chfiles || true
+ #########################################################
+##  Protect sh, bash, X and desktop init scripts         ##
+##  to prevent privilege escalation attacks              ##
+##  and malware persistence - for Qubes Linux templates  ##
+chfiles=".bashrc .bash_profile .bash_login .bash_logout .profile \
+.xprofile .xinitrc .xserverrc .xsession"
+chdirs=".config/autostart .config/plasma-workspace/env .config/plasma-workspace/shutdown \
+.config/autostart-scripts"
 
+cd /home/user
+mkdir -p $chdirs ||true
+touch $chfiles || true
+chattr -R -f +i $chfiles $chdirs || true
+#touch /home/user/FIXED || true
 
 # end of script
 exit 0
