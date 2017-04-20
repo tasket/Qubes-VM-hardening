@@ -1,7 +1,8 @@
 [Unit]
 Description=Script protections to enhance vm-sudo
 After=qubes-sysinit.service
-ConditionPathExists=/var/run/qubes-service/vm-sudo-protect
+ConditionPathExists=|/var/run/qubes-service/vm-sudo-protect
+ConditionPathExists=|/var/run/qubes-service/vm-sudo-protect-root
 
 [Service]
 Type=oneshot
