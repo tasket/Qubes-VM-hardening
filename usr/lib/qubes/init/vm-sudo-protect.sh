@@ -30,7 +30,9 @@ if [ -e /var/run/qubes-service/vm-sudo-protect-root ] && [ `qubesdb-read /qubes-
   cd $rw/home/user
   chattr -R -f -i $chfiles $chdirs || true
   # copy..
-  cp -af $defdir/vms.all/* / || true
+  if [ -d $defdir/vms.all ]; then
+    cp -af $defdir/vms.all/* / || true
+  fi
   if [ -d $defdir/$(hostname) ]; then
     cp -af $defdir/$(hostname)/* / || true
   fi
