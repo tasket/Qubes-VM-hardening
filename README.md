@@ -19,6 +19,9 @@ Note this sets the Linux immutable flag on files and directories, so intended mo
  
 ------
 
+Experimental: Check out the `systemd` branch for new version that can remove or replace scripts and configs in /rw/config, /rw/usrlocal, and /rw/bind-dirs before they can affect VM startup.
+
+------
  
 ## See also:
 
