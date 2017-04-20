@@ -1,7 +1,7 @@
 [Unit]
 Description=Script protections to enhance vm-sudo
-After=qubes-db.service
-Before=qubes-mount-dirs.service
+After=qubes-sysinit.service
+ConditionPathExists=/var/run/qubes-service/vm-sudo-protect
 
 [Service]
 Type=oneshot
@@ -9,4 +9,4 @@ RemainAfterExit=no
 ExecStart=/usr/lib/qubes/init/vm-sudo-protect.sh
 
 [Install]
-WantedBy=multi-user.target 
+WantedBy=sysinit.target 
