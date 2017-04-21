@@ -19,11 +19,13 @@ else
 fi
 
 # Experimental: Remove /rw root startup files and copy defaults.
-# Activated by presence of /etc/defaults/vms/vms.all dir.
+# Activated by presence of vm-sudo-protect-root Qubes service.
 # Contents of vms/vms.all and vms/hostname will be copied.
 defdir="/etc/default/vms"
 rootdirs="$rw/config $rw/usrlocal $rw/bind-dirs"
-if [ -e /var/run/qubes-service/vm-sudo-protect-root ] && [ `qubesdb-read /qubes-vm-persistence` = "rw-only" ]; then
+
+if [ -e /var/run/qubes-service/vm-sudo-protect-root ] \
+&& [ `qubesdb-read /qubes-vm-persistence` = "rw-only" ]; then
   rm -rf $rootdirs
   # make user scripts temporarily mutable, in case 'rw/home/user'
   # files exist in defdir...
