@@ -5,6 +5,8 @@ Before=qubes-mount-dirs.service
 ConditionPathExists=|/var/run/qubes-service/vm-sudo-protect
 ConditionPathExists=|/var/run/qubes-service/vm-sudo-protect-root
 DefaultDependencies=false
+#OnFailure=shutdown.target
+#OnFailureJobMode=replace-irreversibly
 
 [Service]
 Type=oneshot
