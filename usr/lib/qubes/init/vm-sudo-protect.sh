@@ -66,6 +66,7 @@ if qsvc vm-sudo-protect-root && is_rwonly_persistent; then
     chattr -R -f -i $chfiles $chdirs $rootdirs
 
     # Deactivate config dirs
+    # Whitelists do *not* support pattern matching!
     for dir in $rootdirs; do
         if [ -d $dir ]; then
             if [ ! -d $dir-BAK ]; then
