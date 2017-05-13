@@ -11,17 +11,19 @@
 # to be protected
 chfiles=".bashrc .bash_profile .bash_login .bash_logout .profile \
 .xprofile .xinitrc .xserverrc .xsession"
-chdirs=".config/autostart .config/plasma-workspace/env .config/plasma-workspace/shutdown \
-.config/autostart-scripts"
+chdirs=".config/autostart .config/plasma-workspace/env \
+.config/plasma-workspace/shutdown .config/autostart-scripts"
 vmname=`qubesdb-read /name`
 rw=/mnt/rwtmp
 
-# Make user scripts immutable:
+# Function: Make user scripts immutable.
 make_immutable() {
+    #initialize_home $rw/home ifneeded
     cd $rw/home/user
     mkdir -p $chdirs
     touch $chfiles
     chattr -R -f +i $chfiles $chdirs
+    cd /root
     touch $rw/home/user/FIXED #debug
 }
 
@@ -35,6 +37,11 @@ else
 -e "bash -i"
     exit 1
 fi
+if qsvc vm-sudo-protect-cli; then
+    xterm -hold -display :0 -title "VM PROTECTION: SERVICE PROMPT" \
+-e "echo Private volume is mounted at $rw; bash -i"
+fi
+
 
 # Protection measures for /rw dirs:
 # Activated by presence of vm-sudo-protect-root Qubes service.
@@ -64,46 +71,55 @@ if qsvc vm-sudo-protect-root && is_rwonly_persistent; then
         exit 1
     fi
 
-
     # Files mutable for del/copy operations
     cd $rw/home/user
     chattr -R -f -i $chfiles $chdirs $privdirs
+    cd /root
 
     # Deactivate private.img config dirs
     for dir in $privdirs; do
-        rm -rf BAK-$dir
-        mv $dir BAK-$dir
+        bakdir=`dirname $dir`/BAK-`basename $dir`
+        rm -rf  $bakdir
+        mv $dir $bakdir
     done
     mkdir -p $privdirs
 
     for vmset in vms.all $vmname; do
 
         # Process whitelists...
-        while read wlfile; do
+        cat $defdir/$vmset.whitelist \
+        | while read wlfile; do
             # Must begin with '/rw/'
             if echo $wlfile |grep -q "^\/rw\/"; then #Was [ $wlfile =~ ^\/rw\/ ];
-                srcfile="`sed -r \"s|^/rw/(.+)$|$rw/BAK-\1|\" <<<\"$wlfile\"`"
-                # For large dirs: instant mv whole dir when entry ends with '/'
-                if echo $wlfile |grep -q "\/$"; then #Was [ $wlfile =~ .+\/$ ];
-                    mkdir -p "`dirname \"$wlfile\"`"
-                    mv "$srcfile" "`dirname \"$wlfile\"`"
+                srcfile="`echo $wlfile |sed -r \"s|^/rw/(.+)$|$rw/BAK-\1|\"`"
+                dstfile="`echo $wlfile |sed -r \"s|^/rw/(.+)$|$rw/\1|\"`"
+                dstdir="`dirname \"$dstfile\"`"
+                if [ ! -e "$srcfile" ]; then
+                    echo "Whitelist entry not present in filesystem."
+                    continue
+                # For very large dirs: mv whole dir when entry ends with '/'
+                elif echo $wlfile |grep -q "\/$"; then
+                    echo "Whitelist mv $srcfile"
+                    mkdir -p "$dstdir"
+                    mv "$srcfile" "$dstdir"
                 else
-                    cp -al --parents "$srcfile" /
+                    echo "Whitelist cp $srcfile"
+                    cp -a --link "$srcfile" "$dstdir"
                 fi
-            else
+            elif [ -n "$wlfile" ]; then
                 echo "Whitelist path must begin with /rw/."
             fi
-        done <$defdir/$vmset.whitelist
+        done
 
         # Copy default files...
         if [ -d $defdir/$vmset/rw ]; then
-            cp -af $defdir/$vmset/rw/* $rw
+            cp -af "$defdir/$vmset/rw/*" $rw
         fi
+
     done
 
 fi
 
 make_immutable
-cd /
-umount $rw && rmdir $rw
+umount $rw
 exit 0
