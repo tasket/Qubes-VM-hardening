@@ -11,7 +11,7 @@
 # to be protected
 chfiles=".bashrc .bash_profile .bash_login .bash_logout .profile \
 .xprofile .xinitrc .xserverrc .xsession"
-chdirs=".config/autostart .config/plasma-workspace/env \
+chdirs="bin .config/autostart .config/plasma-workspace/env \
 .config/plasma-workspace/shutdown .config/autostart-scripts"
 vmname=`qubesdb-read /name`
 rw=/mnt/rwtmp
