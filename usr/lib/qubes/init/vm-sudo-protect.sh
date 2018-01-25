@@ -79,6 +79,10 @@ if qsvc vm-sudo-protect-root && is_rwonly_persistent; then
     # Deactivate private.img config dirs
     for dir in $privdirs; do
         bakdir=`dirname $dir`/BAK-`basename $dir`
+        bak2dir=`dirname $dir`/BAK2-`basename $dir`
+        if [ -d $bakdir ] && [ ! -d $bak2dir ]; then
+            mv $bakdir $bak2dir
+        fi
         rm -rf  $bakdir
         mv $dir $bakdir
     done
