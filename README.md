@@ -17,12 +17,6 @@ Note this sets the Linux immutable flag on files and directories, so intended mo
  
  
  
-------
-
-Experimental: Check out the `systemd` branch for new version that can remove or replace scripts and configs in /rw/config, /rw/usrlocal, and /rw/bind-dirs before they can affect VM startup.
-
-------
- 
 ## See also:
 
 [Enabling dom0 prompt for sudo](https://www.qubes-os.org/doc/vm-sudo/#replacing-password-less-root-access-with-dom0-user-prompt)
