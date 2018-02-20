@@ -1,0 +1,11 @@
+#!/bin/sh
+[ `id -u` -eq 0 ] || exit
+
+cp vm-sudo-protect.sh /usr/lib/qubes/init
+chmod +x /usr/lib/qubes/init/vm-sudo-protect.sh
+cp vm-sudo-protect.service /lib/systemd/system
+systemctl daemon-reload
+systemctl enable vm-sudo-protect.service
+
+echo vm-sudo-protect installed!
+

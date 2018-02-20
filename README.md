@@ -1,26 +1,37 @@
 # Qubes-VM-hardening
 Enhancing Qubes VM security and privacy
 
-### Pre-requisites:
-   Enabling authentication for sudo (see link below for Qubes doc).
    
 ---
 
 
 ## vm-sudo-protect.service
-   * Protect /home script files
-   * Remove /rw scripts at VM start
+   * Protect /home (user) executable files as immutable
+   * Deactivate /rw (root) executables
+   * Whitelisting for specifying persistent files
+   * SHA256 checksumming guards against unwanted changes
+   * Deploy custom defaut files
+   * Runs at VM start before /rw mounts
 
-## Testing systemd version...
-Install the two files `vm-sudo-protect.sh` and `vm-sudo-protect.service` into template then use `systemctl` to enable the service.
+## Installing
+### Pre-requisites:
+   Re-enable sudo authentication (see notes below).
 
-Activate by specifying as a Qubes service for each VM; There are two levels...
-   1. `vm-sudo-protect` - similar to the rc.local script. Protects scripts within /home and may be used with wide array of VMs including standalone, netVMs and Whonix.
-   2. `vm-sudo-protect-root` - new feature which **erases** /rw/config, /rw/usrlocal and /rw/bind-dirs. Use with caution! This feature can also replace files on a global or per-VM basis... see script for details. Not recommended for standalone or VMs that rely on /rw root dirs such as netVMs or Whonix.
+1. In a template VM, install the two service files
+```
+$ sudo sh ./install
+```
+2. Activate by specifying as a Qubes service for each VM; There are two levels...
+   - `vm-sudo-protect` - Protects executables/scripts within /home/user and may be used with wide array of Qubes VMs including standalone, netVMs and Whonix.
+   - `vm-sudo-protect-root` -  Protects /home/user as above, automatic /rw executable deactivation, whitelisting, checksumming, deployment. Works with appVMs, netVMs, etc. that are _template-based_.
+
+   
+   **removes** dirs specified in $privdirs. Default is /rw/config, /rw/usrlocal and /rw/bind-dirs. Use with caution! This feature can also replace files on a global or per-VM basis... see script for details. Not recommended for standalone or VMs that rely on /rw root dirs such as netVMs or Whonix.
 
 ---
 
-## rc.local (old version)
+## Releases
+- v0.2.0  Protects /home/user files and dirs only
 
 ### Description:
 Placed in /etc/rc.local (or equivalent) of a template VM, this makes the shell init files immutable so PATH and alias cannot be used to hijack commands like su and sudo, nor can impostor apps autostart whenever a VM starts. I combed the dash and bash docs -- as well as Gnome, KDE, Xfce and X11 docs -- to address all the user-writable startup files that apply. Feel free to comment or create an issue if you see an omission or other problem.

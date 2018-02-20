@@ -11,7 +11,7 @@
 # to be protected
 chfiles=".bashrc .bash_profile .bash_login .bash_logout .profile \
 .xprofile .xinitrc .xserverrc .xsession"
-chdirs="bin .config/autostart .config/plasma-workspace/env \
+chdirs="bin .local/bin .config/autostart .config/plasma-workspace/env \
 .config/plasma-workspace/shutdown .config/autostart-scripts"
 vmname=`qubesdb-read /name`
 rw=/mnt/rwtmp
@@ -24,7 +24,7 @@ make_immutable() {
     touch $chfiles
     chattr -R -f +i $chfiles $chdirs
     cd /root
-    touch $rw/home/user/FIXED #debug
+    #touch $rw/home/user/FIXED #debug
 }
 
 # Mount private volume in temp location
