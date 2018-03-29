@@ -56,9 +56,7 @@ Add files to /etc/default/vms in the template to enable the following features..
 
 The `vm-boot-protect` concept relies mostly on the guest operating system's own defenses, with one added advantage of root volume non-persistence provided by the Qubes template system. This means that attacks which damage/exploit the private filesystem itself or quickly re-exploit network vulnerabilities could conceivably still persist at startup. Otherwise, protecting the init/autostart files should result in Qubes template-based VMs that boot 'cleanly' with much less chance of being affected by malware initially. Even if malware persists in a VM, it should be possible to run other apps and terminals without interference if malware has not escalated to root (admittedly, a big 'if').
 
-Repeated running of some apps such as Firefox, Chrome, LibreOffice, PDF viewers, online games, etc. may allow malware to persist in a VM; this is not only because of the complexity of the formats handled by such apps, but also because of settings contained in javascript or which specify shell commands to be executed by the app.
-
-Further, if the user configures a vulnerable app to run at startup, this introduces a malware persistence risk -- although not to the VM's whole execution environment if no privilege escalation is available to the attacker.
+Repeated running of some apps such as Firefox, Chrome, LibreOffice, PDF viewers, online games, etc. may allow malware to persist in a VM; this is not only because of the complexity of the formats handled by such apps, but also because of settings contained in javascript or which specify shell commands to be executed by the app. 
 
 ### Notes
 
