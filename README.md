@@ -1,5 +1,6 @@
 # Qubes-VM-hardening
-Fends off malware at VM startup by locking-down or removing scripts in /rw private storage that affect the execution environment.
+## *README under construction*
+Fends off malware at VM startup: Lock-down and remove scripts in /rw private storage that affect the execution environment.
 
    
 ---
@@ -33,13 +34,15 @@ Fends off malware at VM startup by locking-down or removing scripts in /rw priva
 
 ### Usage
 
+Operation is automatic, although particular configuration options such as hash checks are possible.
 
+At the most basic vm-boot-protect level, certain executable files in /home will be made immutable so PATH and `alias` cannot be used to hijack commands like `su` and `sudo`, nor can impostor apps autostart whenever a VM starts. This prevents normal-privilege attacks from gaining persistence at startup. 
 
-### FIXME Description
+At the vm-boot-protect-root level, the $privdirs paths will be renamed as backups, effectively removing them from the VM startup. Then whitelisting, hash/checksumming and deployment are done (if configured). This protects VM startup from attacks that had previously acheived privilege escalation.
 
-Placed in /etc/rc.local (or equivalent) of a template VM, this makes the shell init files immutable so PATH and alias cannot be used to hijack commands like su and sudo, nor can impostor apps autostart whenever a VM starts. I combed the dash and bash docs -- as well as Gnome, KDE, Xfce and X11 docs -- to address all the user-writable startup files that apply. Feel free to comment or create an issue if you see an omission or other problem.
+### Configuration
 
-Although protecting init/autostart files should result in Qubes template-based VMs that boot 'cleanly' with much less chance of being affected by malware initially, it should be noted that subsequent running of some apps such as Firefox could conceivably allow malware to persist in a VM; this is because not only of the complexity of the formats handled by apps like Firefox and other browsers, but also because of settings contained in javascript code. Even if malware persists in a VM, it should be possible to run other apps and terminals without interference if sudo authentication is enabled and malware has not escalated to root via an exploit (admittedly, a big 'if').
+Although protecting init/autostart files should result in Qubes template-based VMs that boot 'cleanly' with much less chance of being affected by malware initially, it should be noted that subsequent running of some apps such as Firefox could conceivably allow malware to persist in a VM; this is not only because of the complexity of the formats handled by such apps, but also because of settings contained in javascript code. Even if malware persists in a VM, it should be possible to run other apps and terminals without interference if passwordless is disabled and malware has not escalated to root via an exploit (admittedly, a big 'if').
 
 All in all, this is one of the easy steps a Qubes user can take to make their VMs much less hospitable to intrusion and malware. Security can be further enhanced by enabling AppArmor or similar controls.
 
@@ -60,6 +63,8 @@ Further, if the user configures a vulnerable app to run at startup, this introdu
 * The service name has been changed from `vm-sudo-protect` in pre-release to `vm-boot-protect`. The install script will automatically try to disable the old service.
 
 * Currently if a vm-boot-protect check fails there is no immediate way to alert the user at startup. The VM will attempt to shutdown instead. See issue #7 for discussion.
+
+* All the user-writable startup files in /home should be protected. See issue #9 if you see an omission or other problem.
  
 ## Releases
 - v0.8.0  Adds protection to /rw, file SHA checksums, whitelists, deployment
