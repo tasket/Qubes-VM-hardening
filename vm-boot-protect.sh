@@ -77,11 +77,12 @@ if qsvc vm-boot-protect-root && is_rwonly_persistent; then
     cd /root
 
     # Deactivate private.img config dirs
+    mkdir -p `dirname $dir`/vm-boot-protect
     for dir in $privdirs; do
-        bakdir=`dirname $dir`/BAK-`basename $dir`
-        bak2dir=`dirname $dir`/BAK2-`basename $dir`
-        if [ -d $bakdir ] && [ ! -d $bak2dir ]; then
-            mv $bakdir $bak2dir
+        bakdir=`dirname $dir`/vm-boot-protect/BAK-`basename $dir`
+        origdir=`dirname $dir`/vm-boot-protect/ORIG-`basename $dir`
+        if [ -d $bakdir ] && [ ! -d $origdir ]; then
+            mv $bakdir $origdir
         fi
         rm -rf  $bakdir
         mv $dir $bakdir
@@ -119,6 +120,9 @@ if qsvc vm-boot-protect-root && is_rwonly_persistent; then
         if [ -d $defdir/$vmset/rw ]; then
             cp -af "$defdir/$vmset/rw/*" $rw
         fi
+        
+        # Keep configs invisible at runtime...
+        rm -rf $defdir/*
 
     done
 
