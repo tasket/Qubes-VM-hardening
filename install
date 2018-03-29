@@ -1,7 +1,7 @@
 #!/bin/sh
 [ `id -u` -eq 0 ] || exit
 
-echo Disabling the pre-release service (if present)...
+echo "Disabling the pre-release service (if present)..."
 systemctl disable vm-sudo-protect.service
 
 cp vm-boot-protect.sh /usr/lib/qubes/init
@@ -11,5 +11,5 @@ systemctl daemon-reload
 systemctl enable vm-boot-protect.service
 
 echo
-echo vm-boot-protect installed!
+echo "vm-boot-protect installed!"
 
