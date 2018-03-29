@@ -1,11 +1,14 @@
 #!/bin/sh
 [ `id -u` -eq 0 ] || exit
 
-cp vm-sudo-protect.sh /usr/lib/qubes/init
-chmod +x /usr/lib/qubes/init/vm-sudo-protect.sh
-cp vm-sudo-protect.service /lib/systemd/system
+cp vm-boot-protect.sh /usr/lib/qubes/init
+chmod +x /usr/lib/qubes/init/vm-boot-protect.sh
+cp vm-boot-protect.service /lib/systemd/system
 systemctl daemon-reload
-systemctl enable vm-sudo-protect.service
+systemctl enable vm-boot-protect.service
 
-echo vm-sudo-protect installed!
+echo Disabling the pre-release service (if present)...
+systemctl disable vm-sudo-protect.service
+
+echo vm-boot-protect installed!
 

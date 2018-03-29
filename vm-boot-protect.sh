@@ -37,21 +37,21 @@ else
 -e "bash -i"
     exit 1
 fi
-if qsvc vm-sudo-protect-cli; then
+if qsvc vm-boot-protect-cli; then
     xterm -hold -display :0 -title "VM PROTECTION: SERVICE PROMPT" \
 -e "echo Private volume is mounted at $rw; bash -i"
 fi
 
 
 # Protection measures for /rw dirs:
-# Activated by presence of vm-sudo-protect-root Qubes service.
+# Activated by presence of vm-boot-protect-root Qubes service.
 #   * Hashes in vms/vms.all.SHA and vms/$vmname.SHA files will be checked.
 #   * Remove /rw root startup files (config, usrlocal, bind-dirs).
 #   * Contents of vms/vms.all and vms/$vmname folders will be copied.
 defdir="/etc/default/vms"
 privdirs=${privdirs:-"$rw/config $rw/usrlocal $rw/bind-dirs"}
 
-if qsvc vm-sudo-protect-root && is_rwonly_persistent; then
+if qsvc vm-boot-protect-root && is_rwonly_persistent; then
 
     # Check hashes
     checkcode=0

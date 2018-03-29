@@ -1,0 +1,19 @@
+[Unit]
+Description=Protect Qubes VM execution environment at startup
+After=qubes-sysinit.service
+Before=qubes-mount-dirs.service
+ConditionPathExists=|/var/run/qubes-service/vm-boot-protect
+ConditionPathExists=|/var/run/qubes-service/vm-boot-protect-root
+ConditionPathExists=|/var/run/qubes-service/vm-boot-protect-cli
+DefaultDependencies=false
+OnFailure=shutdown.target
+OnFailureJobMode=replace-irreversibly
+
+[Service]
+Type=oneshot
+RemainAfterExit=no
+#Environment="privdirs=/rw/config /rw/usrlocal /rw/bind-dirs"
+ExecStart=/usr/lib/qubes/init/vm-boot-protect.sh
+
+[Install]
+WantedBy=sysinit.target 
