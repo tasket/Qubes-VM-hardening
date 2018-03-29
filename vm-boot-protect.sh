@@ -55,6 +55,7 @@ if qsvc vm-boot-protect-root && is_rwonly_persistent; then
 
     # Check hashes
     checkcode=0
+    echo >/tmp/vm-protect-sum-error
     echo "File hash checks:" >/tmp/vm-protect-sum-error
     for vmset in vms.all $vmname; do
         if [ -f $defdir/$vmset.SHA ]; then
@@ -121,10 +122,10 @@ if qsvc vm-boot-protect-root && is_rwonly_persistent; then
             cp -af "$defdir/$vmset/rw/*" $rw
         fi
         
-        # Keep configs invisible at runtime...
-        rm -rf $defdir/*
-
     done
+
+    # Keep configs invisible at runtime...
+    rm -rf $defdir/*
 
 fi
 
