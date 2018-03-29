@@ -15,23 +15,27 @@ Fends off malware at VM startup by locking-down or removing scripts in /rw priva
 
 
 ## Installing
-### Pre-requisites:
-   Disable automatic root access for VMs (see notes below).
+### Pre-requisites
+   Disable default passwordless-root access for VMs (see notes below).
 
 1. In a template VM, install the two service files
-```
-$ sudo sh ./install
-```
+   ```
+   sudo sh ./install
+   ```
 2. Activate by specifying as a Qubes service for each VM; There are two levels...
    - `vm-boot-protect` - Protects executables/scripts within /home/user and may be used with wide array of Qubes VMs including standalone, netVMs and Whonix.
    - `vm-boot-protect-root` -  Protects /home/user as above, automatic /rw executable deactivation, whitelisting, checksumming, deployment. Works with appVMs, netVMs, etc. that are _template-based_.
 
    
-   **removes** dirs specified in $privdirs. Default is /rw/config, /rw/usrlocal and /rw/bind-dirs. Use with caution! This feature can also replace files on a global or per-VM basis... see script for details. Not recommended for standalone or VMs that rely on /rw root dirs such as netVMs or Whonix.
+   CAUTION: The root option **removes** dirs specified in $privdirs; Default is /rw/config, /rw/usrlocal and /rw/bind-dirs.
 
 ---
 
-### Description:
+### Usage
+
+
+
+### FIXME Description
 
 Placed in /etc/rc.local (or equivalent) of a template VM, this makes the shell init files immutable so PATH and alias cannot be used to hijack commands like su and sudo, nor can impostor apps autostart whenever a VM starts. I combed the dash and bash docs -- as well as Gnome, KDE, Xfce and X11 docs -- to address all the user-writable startup files that apply. Feel free to comment or create an issue if you see an omission or other problem.
 
@@ -44,14 +48,14 @@ Note this sets the Linux immutable flag on files and directories, so intended mo
 
 ### Limitations
 
-vm-boot-protect relies mostly on the guest operating system's own defenses, with one added advantage of root fs non-persistence provided by the Qubes template system. This means that attacks which can somehow undermine the guest OS, i.e. by damaging the private fs itself or quickly exploiting network vulnerabilities, could conceivably still persist at startup.
+vm-boot-protect relies mostly on the guest operating system's own defenses, with one added advantage of root volume non-persistence provided by the Qubes template system. This means that attacks which can profoundly undermine the guest OS, i.e. by damaging the private filesystem itself or quickly re-exploiting network vulnerabilities, could conceivably still persist at startup.
 
 Further, if the user configures a vulnerable app to run at startup, this introduces a malware risk -- although not to the VM's whole execution environment if no privilege escalation is available to the attacker.
 
 ### Notes
 * Disabling the Qubes default passwordless-root is necessary for this project to have a meaningful impact. Here are two recommended ways:
    1. [Enabling dom0 prompt for sudo](https://www.qubes-os.org/doc/vm-sudo/#replacing-password-less-root-access-with-dom0-user-prompt)
-   2. Uninstall the `qubes-core-agent-passwordless-root` from the template. After doing this, you will have to use `qvm-run -u root` from dom0 to run VM commands as root.
+   2. Uninstall the `qubes-core-agent-passwordless-root` package from the template. After doing this, you will have to use `qvm-run -u root` from dom0 to run VM commands as root.
 
 * The service name has been changed from `vm-sudo-protect` in pre-release to `vm-boot-protect`. The install script will automatically try to disable the old service.
 
