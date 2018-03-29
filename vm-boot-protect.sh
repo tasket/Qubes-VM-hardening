@@ -46,7 +46,7 @@ fi
 # Protection measures for /rw dirs:
 # Activated by presence of vm-boot-protect-root Qubes service.
 #   * Hashes in vms/vms.all.SHA and vms/$vmname.SHA files will be checked.
-#   * Remove /rw root startup files (config, usrlocal, bind-dirs).
+#   * Remove /rw root startup files - except whitelist.
 #   * Contents of vms/vms.all and vms/$vmname folders will be copied.
 defdir="/etc/default/vms"
 privdirs=${privdirs:-"$rw/config $rw/usrlocal $rw/bind-dirs"}
@@ -78,10 +78,10 @@ if qsvc vm-boot-protect-root && is_rwonly_persistent; then
     cd /root
 
     # Deactivate private.img config dirs
-    mkdir -p `dirname $dir`/vm-boot-protect
+    mkdir -p $rw/vm-boot-protect
     for dir in $privdirs; do
-        bakdir=`dirname $dir`/vm-boot-protect/BAK-`basename $dir`
-        origdir=`dirname $dir`/vm-boot-protect/ORIG-`basename $dir`
+        bakdir=$rw/vm-boot-protect/BAK-`basename $dir`
+        origdir=$rw/vm-boot-protect/ORIG-`basename $dir`
         if [ -d $bakdir ] && [ ! -d $origdir ]; then
             mv $bakdir $origdir
         fi
@@ -97,7 +97,7 @@ if qsvc vm-boot-protect-root && is_rwonly_persistent; then
         | while read wlfile; do
             # Must begin with '/rw/'
             if echo $wlfile |grep -q "^\/rw\/"; then #Was [ $wlfile =~ ^\/rw\/ ];
-                srcfile="`echo $wlfile |sed -r \"s|^/rw/(.+)$|$rw/BAK-\1|\"`"
+                srcfile="`echo $wlfile |sed -r \"s|^/rw/(.+)$|$rw/vm-boot-protect/BAK-\1|\"`"
                 dstfile="`echo $wlfile |sed -r \"s|^/rw/(.+)$|$rw/\1|\"`"
                 dstdir="`dirname \"$dstfile\"`"
                 if [ ! -e "$srcfile" ]; then
@@ -119,7 +119,7 @@ if qsvc vm-boot-protect-root && is_rwonly_persistent; then
 
         # Copy default files...
         if [ -d $defdir/$vmset/rw ]; then
-            cp -af "$defdir/$vmset/rw/*" $rw
+            cp -af $defdir/$vmset/rw/* $rw
         fi
         
     done
