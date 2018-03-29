@@ -1,10 +1,8 @@
 # Qubes-VM-hardening
 ## *README under construction*
-Fends off malware at VM startup: Lock-down and remove scripts in /rw private storage that affect the execution environment.
+Fend off malware at VM startup: Lock-down and remove scripts in /rw private storage that affect the execution environment.
 
    
----
-
 
 ## vm-boot-protect.service
    * Protect /home (user) executable files as immutable
@@ -16,55 +14,59 @@ Fends off malware at VM startup: Lock-down and remove scripts in /rw private sto
 
 
 ## Installing
-### Pre-requisites
-   Disable default passwordless-root access for VMs (see notes below).
 
 1. In a template VM, install the two service files
    ```
+   cd Qubes-VM-hardening
    sudo sh ./install
    ```
-2. Activate by specifying as a Qubes service for each VM; There are two levels...
-   - `vm-boot-protect` - Protects executables/scripts within /home/user and may be used with wide array of Qubes VMs including standalone, netVMs and Whonix.
+
+2. Activate by specifying one of the following Qubes services for your VM(s)...
+   - `vm-boot-protect` - Protects executables/scripts within /home/user and may be used with wide array of Qubes VMs including standalone, appVMs, netVMs, Whonix, etc.
    - `vm-boot-protect-root` -  Protects /home/user as above, automatic /rw executable deactivation, whitelisting, checksumming, deployment. Works with appVMs, netVMs, etc. that are _template-based_.
 
-   
    CAUTION: The root option **removes** dirs specified in $privdirs; Default is /rw/config, /rw/usrlocal and /rw/bind-dirs.
 
+3. Disabling the Qubes default passwordless-root is necessary for the above measures to work effectively. Here are two recommended ways (choose one):
+   - [Enabling auth prompt for sudo](https://www.qubes-os.org/doc/vm-sudo/#replacing-password-less-root-access-with-dom0-user-prompt) configures a simple yes/no prompt that appears in dom0.
+   - Uninstall the `qubes-core-agent-passwordless-root` package from the template. After doing this, you will have to use `qvm-run -u root` from dom0 to run any VM commands as root.
+   
 ---
 
 ### Usage
 
 Operation is automatic, although particular configuration options such as hash checks are possible.
 
-At the most basic vm-boot-protect level, certain executable files in /home will be made immutable so PATH and `alias` cannot be used to hijack commands like `su` and `sudo`, nor can impostor apps autostart whenever a VM starts. This prevents normal-privilege attacks from gaining persistence at startup. 
+At the basic vm-boot-protect level, certain executable files in /home will be made immutable so PATH and `alias` cannot be used to hijack commands like `su` and `sudo`, nor can impostor apps autostart whenever a VM starts. This prevents normal-privilege attacks from gaining persistence at startup. 
 
-At the vm-boot-protect-root level, the $privdirs paths will be renamed as backups, effectively removing them from the VM startup. Then whitelisting, hash/checksumming and deployment are done (if configured). This protects VM startup from attacks that had previously acheived privilege escalation.
+At the vm-boot-protect-root level, the $privdirs paths will be renamed as backups, effectively removing them from the VM startup. Then whitelisting, hash/checksumming and deployment are done (if configured). This protects VM startup from attacks that had previously achieved privilege escalation.
 
 ### Configuration
 
-Although protecting init/autostart files should result in Qubes template-based VMs that boot 'cleanly' with much less chance of being affected by malware initially, it should be noted that subsequent running of some apps such as Firefox could conceivably allow malware to persist in a VM; this is not only because of the complexity of the formats handled by such apps, but also because of settings contained in javascript code. Even if malware persists in a VM, it should be possible to run other apps and terminals without interference if passwordless is disabled and malware has not escalated to root via an exploit (admittedly, a big 'if').
+Add files to /etc/default/vms in the template to enable the following features...
 
-All in all, this is one of the easy steps a Qubes user can take to make their VMs much less hospitable to intrusion and malware. Security can be further enhanced by enabling AppArmor or similar controls.
+**Hashes/Checksums** are checked in ../vms/vms.all.SHA and ../vms/$vmname.SHA files. File paths contained in them must be absolute. See man page for `sha256sum -c`.
 
-Note this sets the Linux immutable flag on files and directories, so intended modifications to the target files and dirs will require the extra step of disabling the flag using `sudo chattr -i`. Immutable is necessary because normal read-write permissions cannot prevent a normal user from removing other users' files (even root) from a dir they own; once removed, an init file like .bashrc can be re-created by the user process which opens the door to hijacking.
+**Whitelists** are checked in ../vms/vms.all.whitelist and ../vms/$vmname.whitelist files, and file paths contained in them must start with `/rw/`.
+
+**Deployment** files are copied _recursively_ from ../vms/vms.all/rw/ and ../vms/$vmname/rw/ dirs. Example is to place the .bashrc file in /etc/default/vms/vms.all/rw/home/user/.bashrc
 
 
 ### Limitations
 
-vm-boot-protect relies mostly on the guest operating system's own defenses, with one added advantage of root volume non-persistence provided by the Qubes template system. This means that attacks which can profoundly undermine the guest OS, i.e. by damaging the private filesystem itself or quickly re-exploiting network vulnerabilities, could conceivably still persist at startup.
+The `vm-boot-protect` concept relies mostly on the guest operating system's own defenses, with one added advantage of root volume non-persistence provided by the Qubes template system. This means that attacks which damage/exploit the private filesystem itself or quickly re-exploit network vulnerabilities could conceivably still persist at startup. Otherwise, protecting the init/autostart files should result in Qubes template-based VMs that boot 'cleanly' with much less chance of being affected by malware initially. Even if malware persists in a VM, it should be possible to run other apps and terminals without interference if malware has not escalated to root (admittedly, a big 'if').
 
-Further, if the user configures a vulnerable app to run at startup, this introduces a malware risk -- although not to the VM's whole execution environment if no privilege escalation is available to the attacker.
+Repeated running of some apps such as Firefox, Chrome, LibreOffice, PDF viewers, online games, etc. may allow malware to persist in a VM; this is not only because of the complexity of the formats handled by such apps, but also because of settings contained in javascript or which specify shell commands to be executed by the app.
+
+Further, if the user configures a vulnerable app to run at startup, this introduces a malware persistence risk -- although not to the VM's whole execution environment if no privilege escalation is available to the attacker.
 
 ### Notes
-* Disabling the Qubes default passwordless-root is necessary for this project to have a meaningful impact. Here are two recommended ways:
-   1. [Enabling dom0 prompt for sudo](https://www.qubes-os.org/doc/vm-sudo/#replacing-password-less-root-access-with-dom0-user-prompt)
-   2. Uninstall the `qubes-core-agent-passwordless-root` package from the template. After doing this, you will have to use `qvm-run -u root` from dom0 to run VM commands as root.
 
 * The service name has been changed from `vm-sudo-protect` in pre-release to `vm-boot-protect`. The install script will automatically try to disable the old service.
 
 * Currently if a vm-boot-protect check fails there is no immediate way to alert the user at startup. The VM will attempt to shutdown instead. See issue #7 for discussion.
 
-* All the user-writable startup files in /home should be protected. See issue #9 if you see an omission or other problem.
+* All the user-writable startup files in /home should be protected by the immutable flag; See issue #9 if you notice an omission or other problem. An extra step of disabling the flag using `sudo chattr -i` whenever the user wants to modify these startup files.
  
 ## Releases
 - v0.8.0  Adds protection to /rw, file SHA checksums, whitelists, deployment
