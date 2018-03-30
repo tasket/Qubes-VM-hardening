@@ -6,14 +6,14 @@ ConditionPathExists=|/var/run/qubes-service/vm-boot-protect
 ConditionPathExists=|/var/run/qubes-service/vm-boot-protect-root
 ConditionPathExists=|/var/run/qubes-service/vm-boot-protect-cli
 DefaultDependencies=false
-OnFailure=shutdown.target
-OnFailureJobMode=replace-irreversibly
+#OnFailure=rescue.target
+#OnFailureJobMode=replace-irreversibly
 
 [Service]
 Type=oneshot
 RemainAfterExit=no
 # privdirs must begin with /rw
-#Environment="privdirs=/rw/config /rw/usrlocal /rw/bind-dirs"
+# Environment="privdirs=/rw/config /rw/usrlocal /rw/bind-dirs"
 ExecStart=/usr/lib/qubes/init/vm-boot-protect.sh
 
 [Install]
