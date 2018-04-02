@@ -6,11 +6,10 @@ Leverage Qubes template non-persistence to enhance the guest operating system's 
 
 ## vm-boot-protect.service
    * Protect /home (user) executable files as immutable
-   * Quarantine /rw (root) configs & scripts, with Whitelisting
+   * Quarantine all /rw (root) configs & scripts, with Whitelisting
    * SHA256 checksumming guards against unwanted changes
    * Re-deploy custom 'default' files to /rw on each boot
    * Runs at VM start before /rw mounts
-   * Provides rescue shell with non-persistent /home
 
 
 ## Installing
@@ -41,7 +40,6 @@ At the `vm-boot-protect` level, certain executable files in /home will be made i
 
 At the `vm-boot-protect-root` level, the $privdirs paths will be renamed as backups, effectively removing them from the VM startup. Then whitelisting, hash/checksumming and deployment are done (if configured). This protects VM startup from attacks that had previously achieved privilege escalation.
 
-The special `vm-boot-protect-cli` level unconditionally goes to the service shell.
 
 ### Configuration
 
@@ -69,7 +67,6 @@ Conversely, attacks which damage/exploit the private filesystem itself or quickl
 * All the user-writable startup files in /home should be protected by the immutable flag; See issue #9 if you notice an omission or other problem. An extra step of disabling the flag using `sudo chattr -i` whenever the user wants to modify these startup files.
  
 ## Releases
-- v0.8.1  Rescue service mode on error or request
 - v0.8.0  Adds protection to /rw, file SHA checksums, whitelists, deployment
 - v0.2.0  Protects /home/user files and dirs
 
