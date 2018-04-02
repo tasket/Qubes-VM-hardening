@@ -15,6 +15,7 @@ RemainAfterExit=no
 # privdirs must begin with /rw
 # Environment="privdirs=/rw/config /rw/usrlocal /rw/bind-dirs"
 ExecStart=/usr/lib/qubes/init/vm-boot-protect.sh
+Restart=no
 
 [Install]
 WantedBy=sysinit.target 

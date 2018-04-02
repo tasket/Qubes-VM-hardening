@@ -6,7 +6,7 @@ Leverage Qubes template non-persistence to enhance the guest operating system's 
 
 ## vm-boot-protect.service
    * Protect /home (user) executable files as immutable
-   * Quarrantine /rw (root) configs & scripts, with Whitelisting
+   * Quarantine /rw (root) configs & scripts, with Whitelisting
    * SHA256 checksumming guards against unwanted changes
    * Re-deploy custom 'default' files to /rw on each boot
    * Runs at VM start before /rw mounts
@@ -35,11 +35,13 @@ Leverage Qubes template non-persistence to enhance the guest operating system's 
 
 ### Usage
 
-Operation is automatic, although particular configuration options such as hash checks are possible.
+Operation is automatic and will result in either a normal process with full access to the private volume at /rw, or a rescue service mode with the private volume quarantined at /mnt/rwtmp.
 
 At the `vm-boot-protect` level, certain executable files in /home will be made immutable so PATH and `alias` cannot be used to hijack commands like `su` and `sudo`, nor can impostor apps autostart whenever a VM starts. This prevents normal-privilege attacks from gaining persistence at startup. 
 
 At the `vm-boot-protect-root` level, the $privdirs paths will be renamed as backups, effectively removing them from the VM startup. Then whitelisting, hash/checksumming and deployment are done (if configured). This protects VM startup from attacks that had previously achieved privilege escalation.
+
+The special `vm-boot-protect-cli` level unconditionally goes to the service shell.
 
 ### Configuration
 
@@ -67,6 +69,7 @@ Conversely, attacks which damage/exploit the private filesystem itself or quickl
 * All the user-writable startup files in /home should be protected by the immutable flag; See issue #9 if you notice an omission or other problem. An extra step of disabling the flag using `sudo chattr -i` whenever the user wants to modify these startup files.
  
 ## Releases
+- v0.8.1  Rescue service mode on error or request
 - v0.8.0  Adds protection to /rw, file SHA checksums, whitelists, deployment
 - v0.2.0  Protects /home/user files and dirs
 
