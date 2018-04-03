@@ -50,16 +50,19 @@ Leverage Qubes template non-persistence to enhance the guest operating system's 
 
    **Hashes/Checksums** are checked in ../vms/vms.all.SHA and ../vms/$vmname.SHA files. File paths contained in them must be absolute. See man page for `sha256sum -c`.
 
-   **Whitelists** are checked in ../vms/vms.all.whitelist and ../vms/$vmname.whitelist files, and file paths contained in them must start with `/rw/`. A default is provided in ..vms/sys-net.whitelist to preserve Network Manager connections in sys-net.
+   **Whitelists** are checked in ../vms/vms.all.whitelist and ../vms/$vmname.whitelist files, and file paths contained in them must start with `/rw/`. A default is provided in ..vms/sys-net.whitelist to preserve Network Manager connections and sleep module list in sys-net.
 
    **Deployment** files are copied _recursively_ from ../vms/vms.all/rw/ and ../vms/$vmname/rw/ dirs. Example is to place the .bashrc file in /etc/default/vms/vms.all/rw/home/user/.bashrc .
 
 
-### Limitations
+### Scope and Limitations
 
-   The `vm-boot-protect` concept enhances the guest operating system's own defenses by using the *root volume* non-persistence provided by the Qubes template system; thus a relatively pristine startup state may be achieved if the *private* volume is brought online in a controlled manner. Protecting the init/autostart files should result in Qubes template-based VMs that boot 'cleanly' with much less chance of being affected by malware initially. Even if malware persists in a VM, it should be possible to run other apps and terminals without interference if the malware has not escalated to root (admittedly, a big 'if').
+   The *vm-boot-protect* concept enhances the guest operating system's own defenses by using the *root volume non-persistence* provided by the Qubes template system; thus a relatively pristine startup state may be achieved if the *private* volume is brought online in a controlled manner. Protecting the init/autostart files should result in Qubes template-based VMs that boot 'cleanly' with much less chance of being affected by malware initially. Even if malware persists in a VM, it should be possible to run other apps and terminals without interference if the malware has not escalated to root (admittedly, a big 'if').
 
    Conversely, attacks which damage/exploit the Ext4 private filesystem itself or quickly re-exploit network vulnerabilities could conceivably still persist at startup. Further, repeated running of some apps such as Firefox, Chrome, LibreOffice, PDF viewers, online games, etc. may allow malware to persist in a VM; this is not only because of the complexity of the formats handled by such apps, but also because of settings contained in javascript or which specify commands to be executed by the app. Therefore, setting apps to autostart can diminish protection of the startup environment.
+   
+   Note that as vulnerabilities are patched via system updates, malware that relies on them can only continue to persist via the kind of execution loopholes that *vm-boot-protect* closes.
+
 
 ### Notes
 
@@ -71,7 +74,7 @@ Leverage Qubes template non-persistence to enhance the guest operating system's 
    
  
 ## Releases
-   - v0.8.1  Working rescue shell. Network Manager whitelist.
+   - v0.8.1  Working rescue shell. Add sys-net whitelist, fixes.
    - v0.8.0  Adds protection to /rw, file SHA checksums, whitelists, deployment
    - v0.2.0  Protects /home/user files and dirs
 
