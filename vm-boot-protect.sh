@@ -57,7 +57,9 @@ abort_startup() {
 
 # Don't bother with root protections in template or standalone
 if ! is_rwonly_persistent; then
-###    make_immutable
+    if qsvc vm-boot-protect; then
+        make_immutable
+    fi
     exit 0
 fi
 
