@@ -17,6 +17,8 @@ chdirs="bin .local/bin .config/autostart .config/plasma-workspace/env \
 vmname=`qubesdb-read /name`
 rw=/mnt/rwtmp
 errlog=/var/run/vm-protect-error
+defdir=/etc/default/vms
+
 
 # Function: Make user scripts immutable.
 make_immutable() {
@@ -80,7 +82,6 @@ fi
 #   * Hashes in vms/vms.all.SHA and vms/$vmname.SHA files will be checked.
 #   * Remove /rw root startup files (config, usrlocal, bind-dirs).
 #   * Contents of vms/vms.all and vms/$vmname folders will be copied.
-defdir="/etc/default/vms"
 privdirs=${privdirs:-"$rw/config $rw/usrlocal $rw/bind-dirs"}
 
 if qsvc vm-boot-protect-root && is_rwonly_persistent; then
@@ -159,12 +160,10 @@ if qsvc vm-boot-protect-root && is_rwonly_persistent; then
         if [ -d $defdir/$vmset/rw ]; then
             echo "Copy files from $defdir/$vmset/rw"
             cp -af $defdir/$vmset/rw/* $rw
-        fi
-        
     done
 
     # Keep configs invisible at runtime...
-    rm -rf $defdir/*
+    rm -rf "$defdir"
 
 fi
 
