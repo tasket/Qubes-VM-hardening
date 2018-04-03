@@ -66,6 +66,9 @@ Leverage Qubes template non-persistence to enhance the guest operating system's 
    * The service name has been changed from `vm-sudo-protect` in pre-release to `vm-boot-protect`. The install script will automatically try to disable the old service.
 
    * All the user-writable startup files in /home should be protected by the immutable flag; See issue #9 if you notice an omission or other problem. An extra step of disabling the flag using `sudo chattr -i` whenever the user wants to modify these startup files.
+
+   * Adding /home or subdirs of it to $privdirs is possible. This would quarantine everything in that dir to set the stage for applying whitelists on /home contents. The $privdirs variable can be changed via the service file, for example adding a .conf file in /lib/systemd/system/vm-boot-protect.d.
+   
  
 ## Releases
    - v0.8.1  Working rescue shell. Network Manager whitelist.

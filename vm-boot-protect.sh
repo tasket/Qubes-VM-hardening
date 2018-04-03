@@ -16,6 +16,7 @@ chdirs="bin .local/bin .config/autostart .config/plasma-workspace/env \
 
 vmname=`qubesdb-read /name`
 rw=/mnt/rwtmp
+rwbak=$rw/vm-boot-protect
 errlog=/var/run/vm-protect-error
 defdir=/etc/default/vms
 
@@ -82,7 +83,7 @@ fi
 #   * Hashes in vms/vms.all.SHA and vms/$vmname.SHA files will be checked.
 #   * Remove /rw root startup files (config, usrlocal, bind-dirs).
 #   * Contents of vms/vms.all and vms/$vmname folders will be copied.
-privdirs=${privdirs:-"$rw/config $rw/usrlocal $rw/bind-dirs"}
+privdirs=${privdirs:-"/rw/config /rw/usrlocal /rw/bind-dirs"}
 
 if qsvc vm-boot-protect-root && is_rwonly_persistent; then
 
@@ -115,18 +116,19 @@ if qsvc vm-boot-protect-root && is_rwonly_persistent; then
 
 
     # Deactivate private.img config dirs
-    mkdir -p $rw/vm-boot-protect
-    for dir in $privdirs; do
+    mkdir -p $rwbak
+    for dir in $privdirs; do # maybe use 'eval' for privdirs quotes/escaping
         echo "Deactivate $dir"
-        bakdir=`dirname $dir`/vm-boot-protect/BAK-`basename $dir`
-        origdir=`dirname $dir`/vm-boot-protect/ORIG-`basename $dir`
-        if [ -d $bakdir ] && [ ! -d $origdir ]; then
-            mv $bakdir $origdir
+        subdir=`echo $dir |sed -r 's|^/rw/||'`
+        bakdir="$rwbak/BAK-$subdir"
+        origdir="$rwbak/ORIG-$subdir"
+        if [ -d "$bakdir" ] && [ ! -d "$origdir" ]; then
+            mv "$bakdir" "$origdir"
         fi
-        rm -rf  $bakdir
-        mv $dir $bakdir
+        rm -rf  "$bakdir"
+        mv "$rw/$subdir" "$bakdir"
+        mkdir -p "$rw/$subdir"
     done
-    mkdir -p $privdirs
 
     for vmset in vms.all $vmname; do
 
@@ -134,8 +136,8 @@ if qsvc vm-boot-protect-root && is_rwonly_persistent; then
         cat $defdir/$vmset.whitelist \
         | while read wlfile; do
             # Must begin with '/rw/'
-            if echo $wlfile |grep -q "^\/rw\/"; then #Was [ $wlfile =~ ^\/rw\/ ];
-                srcfile="`echo $wlfile |sed -r \"s|^/rw/(.+)$|$rw/BAK-\1|\"`"
+            if echo $wlfile |grep -q "^\/rw\/"; then
+                srcfile="`echo $wlfile |sed -r \"s|^/rw/(.+)$|$rwbak/BAK-\1|\"`"
                 dstfile="`echo $wlfile |sed -r \"s|^/rw/(.+)$|$rw/\1|\"`"
                 dstdir="`dirname \"$dstfile\"`"
                 if [ ! -e "$srcfile" ]; then
@@ -145,10 +147,12 @@ if qsvc vm-boot-protect-root && is_rwonly_persistent; then
                 # For very large dirs: mv whole dir when entry ends with '/'
                 elif echo $wlfile |grep -q "\/$"; then
                     echo "Whitelist mv $srcfile"
+                    echo "to $dstfile"
                     mkdir -p "$dstdir"
-                    mv "$srcfile" "$dstdir"
+                    mv -T "$srcfile" "$dstfile"
                 else
                     echo "Whitelist cp $srcfile"
+                    mkdir -p "$dstdir"
                     cp -a --link "$srcfile" "$dstdir"
                 fi
             elif [ -n "$wlfile" ]; then
@@ -160,6 +164,8 @@ if qsvc vm-boot-protect-root && is_rwonly_persistent; then
         if [ -d $defdir/$vmset/rw ]; then
             echo "Copy files from $defdir/$vmset/rw"
             cp -af $defdir/$vmset/rw/* $rw
+        fi
+
     done
 
     # Keep configs invisible at runtime...
