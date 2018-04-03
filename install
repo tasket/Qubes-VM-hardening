@@ -1,14 +1,20 @@
 #!/bin/sh
+set -e
 [ `id -u` -eq 0 ] || exit
 
 echo "Disabling the pre-release service (if present)..."
-systemctl disable vm-sudo-protect.service
+systemctl disable vm-sudo-protect.service || true
 
+echo "Installing vm-boot-protect.service..."
 cp vm-boot-protect.sh /usr/lib/qubes/init
 chmod +x /usr/lib/qubes/init/vm-boot-protect.sh
 cp vm-boot-protect.service /lib/systemd/system
 systemctl daemon-reload
 systemctl enable vm-boot-protect.service
+
+echo "Adding defaults in /etc/default/vms..."
+# Careful... ownership & mode are not preserved here!
+cp -rnv default/vms/* /etc/default/vms
 
 echo
 echo "vm-boot-protect installed!"
