@@ -39,14 +39,13 @@ abort_startup() {
 
     umount /dev/xvdb
     mv -f /dev/xvdb /dev/badxvdb
-    mount -o ro /dev/badxvdb $rw
     truncate --size=500M /root/dev-xvdb
     loop=`losetup --find --show /root/dev-xvdb`
     mv -f $loop /dev/xvdb
 
     cat /etc/bashrc /etc/bash.bashrc >/etc/bashrc-insert
     echo "echo '** VM-BOOT-PROTECT SERVICE SHELL'" >/etc/bashrc
-    echo "echo '** Private volume is located at' $rw" >>/etc/bashrc
+    echo "echo '** Private volume is located at /dev/badxvdb'" >>/etc/bashrc
     echo "cat $errlog" >>/etc/bashrc
     echo ". /etc/bashrc-insert" >>/etc/bashrc
     ln -f /etc/bashrc /etc/bash.bashrc
