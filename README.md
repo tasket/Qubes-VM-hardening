@@ -1,16 +1,17 @@
 # Qubes-VM-hardening
 
-Fend off malware at VM startup: Lock-down and remove scripts in /rw private storage that affect the execution environment.
-Leverage Qubes template non-persistence to enhance the guest operating system's own defenses.
+Fend off malware at VM startup: Lock-down and quarantine scripts in /rw private storage that affect the execution environment.
+Leverages Qubes template non-persistence to enhance the guest operating system's own defenses.
    
 
 ## vm-boot-protect.service
    * Acts at VM startup before private volume /rw mounts
-   * User: Protect /home executable files as immutable
+   * User: Protect /home desktop & shell startup executables
    * Root: Quarantine all /rw configs & scripts, with whitelisting
    * Re-deploy custom or default files to /rw on each boot
-   * SHA256 checksumming guards against unwanted changes
+   * SHA256 hashing guards against unwanted changes
    * Provides rescue shell on error or request
+   * Works with template-based AppVMs, sys-net and sys-vpn
 
 
 ## Installing
@@ -25,11 +26,13 @@ Leverage Qubes template non-persistence to enhance the guest operating system's 
    - `vm-boot-protect` - Protects executables/scripts within /home/user and may be used with wide array of Qubes VMs including standalone, appVMs, netVMs, Whonix, etc.
    - `vm-boot-protect-root` -  Protects /home/user as above, automatic /rw executable deactivation, whitelisting, checksumming, deployment. Works with appVMs, netVMs, etc. that are _template-based_.
 
-   CAUTION: The -root option by default **removes** dirs /rw/config, /rw/usrlocal and /rw/bind-dirs!
+   CAUTION: The -root option by default **removes** prior copies of /rw/config, /rw/usrlocal and /rw/bind-dirs. This can delete data!
 
-3. Disabling the Qubes default passwordless-root is necessary for the above measures to work effectively. Here are two recommended ways (choose one):
-   - [Enabling auth prompt for sudo](https://www.qubes-os.org/doc/vm-sudo/#replacing-password-less-root-access-with-dom0-user-prompt) configures a simple yes/no prompt that appears in dom0.
-   - Uninstall the `qubes-core-agent-passwordless-root` package from the template. After doing this, you will have to use `qvm-run -u root` from dom0 to run any VM commands as root.
+3. Disable Qubes default passwordless-root. This is necessary for the above measures to work effectively...
+
+   For Debian-based templates `configure-sudo-prompt` will launch automatically to [enable a sudo yes/no prompt](https://www.qubes-os.org/doc/vm-sudo/#replacing-password-less-root-access-with-dom0-user-prompt) that appears in dom0. This handles the template configuration then displays several commands to manually configure dom0 (the dom0 step is required only once, regardless of how many templates you configure). You may test the `configure-sudo-prompt` script in a regular template-based appVM to see if it works, although the effect will be temporary.
+
+   Alternately, you can uninstall the `qubes-core-agent-passwordless-root` package from the template. After doing this, you will have to use `qvm-run -u root` from dom0 to run any VM commands as root.
    
 ---
 
@@ -59,22 +62,22 @@ Leverage Qubes template non-persistence to enhance the guest operating system's 
 
    The *vm-boot-protect* concept enhances the guest operating system's own defenses by using the *root volume non-persistence* provided by the Qubes template system; thus a relatively pristine startup state may be achieved if the *private* volume is brought online in a controlled manner. Protecting the init/autostart files should result in Qubes template-based VMs that boot 'cleanly' with much less chance of being affected by malware initially. Even if malware persists in a VM, it should be possible to run other apps and terminals without interference if the malware has not escalated to root (admittedly, a big 'if').
 
-   Conversely, attacks which damage/exploit the Ext4 private filesystem itself or quickly re-exploit network vulnerabilities could conceivably still persist at startup. Further, repeated running of some apps such as Firefox, Chrome, LibreOffice, PDF viewers, online games, etc. may allow malware to persist in a VM; this is not only because of the complexity of the formats handled by such apps, but also because of settings contained in javascript or which specify commands to be executed by the app. Therefore, setting apps to autostart can diminish protection of the startup environment.
+   Conversely, attacks which damage/exploit the Ext4 private filesystem itself or quickly re-exploit network vulnerabilities could conceivably still persist at startup. Further, repeated running of some apps such as Firefox, Chrome, LibreOffice, PDF viewers, online games, etc. may reactivate malware; this is not only because of the complexity of the formats handled by such apps, but also because of settings contained in javascript or which specify commands to be executed by the app. Therefore, setting apps to autostart can diminish protection of the startup environment.
    
-   Note that as vulnerabilities are patched via system updates, malware that relies on them can only continue to persist via the kind of execution loopholes that *vm-boot-protect* closes.
-
+   Note that as vulnerabilities are patched via system updates, malware that used those vulns to gain entry may cease to function without the kind of loopholes that *vm-boot-protect* closes.
 
 ### Notes
 
    * The service name has been changed from `vm-sudo-protect` in pre-release to `vm-boot-protect`. The install script will automatically try to disable the old service.
 
-   * All the user-writable startup files in /home should be protected by the immutable flag; See issue #9 if you notice an omission or other problem. An extra step of disabling the flag using `sudo chattr -i` whenever the user wants to modify these startup files.
+   * All the user-writable startup files in /home should be protected by the immutable flag; See issue #9 if you notice an omission or other problem. An extra step of disabling the flag using `sudo chattr -i` is required whenever the user wants to modify these startup files.
 
-   * Adding /home or subdirs of it to $privdirs is possible. This would quarantine everything in that dir to set the stage for applying whitelists on /home contents. The $privdirs variable can be changed via the service file, for example adding a .conf file in /lib/systemd/system/vm-boot-protect.d.
+   * Adding /home or subdirs of it to $privdirs is possible. This would quarantine everything there to set the stage for applying whitelists on /home contents. The $privdirs variable can be changed via the service file, for example adding a .conf file in /lib/systemd/system/vm-boot-protect.d.
    
+   * Using the -root option with a [VPN VM](https://github.com/tasket/Qubes-vpn-support) can be approached different ways: SHA + whitelist combination can be made for the appropriate files. Alternately, all VPN configs can be added under /etc/default/vms/vmname/rw so they'll be automatically deployed.
  
 ## Releases
-   - v0.8.1  Working rescue shell. Add sys-net whitelist, fixes.
+   - v0.8.1  Working rescue shell. Add sys-net whitelist, sudo config, fixes.
    - v0.8.0  Adds protection to /rw, file SHA checksums, whitelists, deployment
    - v0.2.0  Protects /home/user files and dirs
 

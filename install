@@ -1,4 +1,6 @@
-#!/bin/sh
+#!/bin/bash
+# From https://github.com/tasket/Qubes-VM-hardening
+
 set -e
 [ `id -u` -eq 0 ] || exit
 
@@ -16,6 +18,8 @@ echo "Adding defaults in /etc/default/vms..."
 # Careful... ownership & mode are not preserved here!
 cp -rnv default/vms/* /etc/default/vms
 
-echo
-echo "vm-boot-protect installed!"
+echo -e "\nvm-boot-protect installed!\n"
+
+bash ./configure-sudo-prompt
+exit 0
 

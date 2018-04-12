@@ -1,0 +1,56 @@
+#!/bin/bash
+# From https://github.com/tasket/Qubes-VM-hardening
+
+set -e
+[ `id -u` -eq 0 ] || exit
+if [ ! -e /etc/debian_version ]; then
+    echo "Debian-based template required for autoconfiguration. 
+See qubes-os.org/doc/vm-sudo for manual instructions."
+    exit 0
+fi
+
+echo -e "\n--+  Enable yes/no authentication prompt for sudo  +--
+Warning: Before opting for this change a backup or clone
+should me made of this template!"
+read -p "Configure sudo authentication prompt now? (y/n): " answer
+if [[ $answer == @(y|Y) ]]; then
+
+    mv -fb /etc/pam.d/common-auth /etc/pam.d/common-auth.bak
+    cat >/etc/pam.d/common-auth <<_EOF
+auth  [success=1 default=ignore]  pam_exec.so seteuid /usr/lib/qubes/qrexec-client-vm dom0 qubes.VMAuth /bin/grep -q ^1$
+auth  requisite  pam_deny.so
+auth  required   pam_permit.so
+_EOF
+
+
+#    sed -i 's/^user ALL=(ALL) NOPASSWD: ALL/user ALL=(ALL) ALL/' /etc/sudoers.d/qubes
+    sed -i 's/^user/#user/' /etc/sudoers.d/qubes
+    echo 'user ALL=(ALL) ALL' >>/etc/sudoers.d/qubes
+
+    sed -ri 's/^(auth[[:space:]]sufficient[[:space:]]pam_permit.so)/#\1/' /etc/pam.d/su
+
+    mv -f /etc/polkit-1/rules.d/00-qubes-allow-all.rules \
+      /etc/polkit-1/rulesd_00-qubes-allow-all.rules.bak
+    mv -f /etc/polkit-1/localauthority/50-local.d/qubes-allow-all.pkla \
+      /etc/polkit-1/localauthority_50-locald_qubes-allow-all.pkla.bak
+
+    if [ -e /etc/whonix.d ]; then
+        cat >/etc/sudoers.d/zz99_sudoprompt <<_EOF
+ALL ALL=NOPASSWD: /usr/sbin/virt-what
+ALL ALL=NOPASSWD: /usr/sbin/service whonixcheck restart
+ALL ALL=NOPASSWD: /usr/sbin/service whonixcheck start
+ALL ALL=NOPASSWD: /usr/sbin/service whonixcheck stop
+ALL ALL=NOPASSWD: /usr/sbin/service whonixcheck status
+_EOF
+    fi
+    echo "Done."
+
+    echo '
+Next.... Enable auth prompts in dom0 with the following commands:
+  [user@dom0 ~]$ sudo su -
+  [root@dom0 /]# echo "/usr/bin/echo 1" >/etc/qubes-rpc/qubes.VMAuth
+  [root@dom0 /]# echo "\$anyvm dom0 ask,default_target=dom0" \
+    >/etc/qubes-rpc/policy/qubes.VMAuth
+
+'
+fi

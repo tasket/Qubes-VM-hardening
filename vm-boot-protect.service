@@ -1,5 +1,6 @@
 [Unit]
 Description=Protect Qubes VM execution environment at startup
+Documentation=https://github.com/tasket/Qubes-VM-hardening
 After=qubes-sysinit.service
 Before=qubes-mount-dirs.service
 ConditionPathExists=|/var/run/qubes-service/vm-boot-protect
