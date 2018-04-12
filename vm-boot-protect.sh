@@ -90,7 +90,8 @@ mkdir -p $rw
 if [ -e /dev/xvdb ] && mount -o ro /dev/xvdb $rw ; then
     echo "Good read-only mount."
 else
-    abort_startup "Mount failed!"
+    echo "Mount failed. Let qubes-mount-dirs (re)initialize volume..."
+    exit 0
 fi
 
 
