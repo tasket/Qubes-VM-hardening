@@ -75,6 +75,8 @@ Leverages Qubes template non-persistence to enhance the guest operating system's
    * Adding /home or subdirs of it to $privdirs is possible. This would quarantine everything there to set the stage for applying whitelists on /home contents. The $privdirs variable can be changed via the service file, for example adding a .conf file in /lib/systemd/system/vm-boot-protect.d.
    
    * Using the -root option with a [VPN VM](https://github.com/tasket/Qubes-vpn-support) can be approached different ways: SHA + whitelist combination can be made for the appropriate files. Alternately, all VPN configs can be added under /etc/default/vms/vmname/rw so they'll be automatically deployed.
+
+   * Currently the service cannot seamlessly handle 'first boot' when the private volume must be initialized. If you enabled the service on a VM before its first startup, on first start you will see a special rescue shell telling you to restart the VM. Subsequent starts will proceed normally.
  
 ## Releases
    - v0.8.1  Working rescue shell. Add sys-net whitelist, sudo config, fixes.

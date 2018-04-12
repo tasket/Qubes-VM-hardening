@@ -31,6 +31,7 @@ chdirs="bin .local/bin .config/autostart .config/plasma-workspace/env \
 .config/plasma-workspace/shutdown .config/autostart-scripts"
 
 vmname=`qubesdb-read /name`
+dev=/dev/xvdb
 rw=/mnt/rwtmp
 rwbak=$rw/vm-boot-protect
 errlog=/var/run/vm-protect-error
@@ -45,29 +46,41 @@ make_immutable() {
     touch $chfiles
     chattr -R -f +i $chfiles $chdirs
     cd /root
-    #touch $rw/home/user/FIXED #debug
 }
 
 # Start rescue shell then exit/fail
 abort_startup() {
-    echo "$1" >>$errlog
+    type="$1"
+    msg="$2"
+    echo "$msg" >>$errlog
     cat $errlog
 
-    umount /dev/xvdb
-    mv -f /dev/xvdb /dev/badxvdb
-    truncate --size=500M /root/dev-xvdb
-    loop=`losetup --find --show /root/dev-xvdb`
-    mv -f $loop /dev/xvdb
+    rc=1
+    if [ $type = "RELOCATE" ]; then
+    # quarantine private volume
+        umount $dev
+        mv -f $dev /dev/badxvdb
+        truncate --size=500M /root/dev-xvdb
+        loop=`losetup --find --show /root/dev-xvdb`
+        mv -f $loop $dev
+    elif [ $type = "OK" ]; then
+    # allow normal start with private vol
+        rc=0
+    fi
 
+    # insert status msg and run xterm
     cat /etc/bashrc /etc/bash.bashrc >/etc/bashrc-insert
     echo "echo '** VM-BOOT-PROTECT SERVICE SHELL'" >/etc/bashrc
-    echo "echo '** Private volume is located at /dev/badxvdb'" >>/etc/bashrc
+    if [ $type = "RELOCATE" ]; then
+        echo "echo '** Private volume is located at /dev/badxvdb'" >>/etc/bashrc
+    fi
     echo "cat $errlog" >>/etc/bashrc
     echo ". /etc/bashrc-insert" >>/etc/bashrc
     ln -f /etc/bashrc /etc/bash.bashrc
     echo '/usr/bin/nohup /usr/bin/xterm /bin/bash 0<&- &>/dev/null &' \
         >/etc/X11/Xsession.d/98rescue
-    exit 1
+
+    exit $rc
 }
 
 
@@ -77,21 +90,29 @@ if ! is_rwonly_persistent; then
         make_immutable
     fi
     exit 0
+    # cannot use abort_startup() before this point
 fi
 
 echo >$errlog # Clear
 
 if qsvc vm-boot-protect-cli; then
-    abort_startup "CLI requested."
+    abort_startup RELOCATE "CLI requested."
 fi
 
 # Mount private volume in temp location
 mkdir -p $rw
-if [ -e /dev/xvdb ] && mount -o ro /dev/xvdb $rw ; then
+if [ -e $dev ] && mount -o ro $dev $rw ; then
     echo "Good read-only mount."
 else
-    echo "Mount failed. Let qubes-mount-dirs (re)initialize volume..."
-    exit 0
+    echo "Mount failed."
+    # decide if this is initial boot or a bad volume
+    private_size_512=$(blockdev --getsz "$dev")
+    if head -c $(( private_size_512 * 512 )) /dev/zero | diff "$dev" - >/dev/null; then
+        touch /var/run/qubes/VM-BOOT-PROTECT-INITIALIZERW
+        abort_startup OK "FIRST BOOT INITIALIZATION: PLEASE RESTART VM!"
+    else
+        abort_startup RELOCATE "Mount and mount-dirs failed; BAD private volume!"
+    fi
 fi
 
 
@@ -117,14 +138,14 @@ if qsvc vm-boot-protect-root && is_rwonly_persistent; then
 
     # Stop system startup on checksum mismatch:
     if [ $checkcode != 0 ]; then
-        abort_startup "Hash check failed!"
+        abort_startup RELOCATE "Hash check failed!"
     fi
 
     # Begin write operations
-    if [ -e /dev/xvdb ] && mount -o remount,rw /dev/xvdb $rw ; then
+    if [ -e $dev ] && mount -o remount,rw $dev $rw ; then
         echo Good rw remount.
     else
-        abort_startup "Remount failed!"
+        abort_startup RELOCATE "Remount failed!"
     fi
 
     # Files mutable for del/copy operations
