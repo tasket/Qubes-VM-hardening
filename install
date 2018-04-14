@@ -16,7 +16,7 @@ systemctl enable vm-boot-protect.service
 
 echo "Adding defaults in /etc/default/vms..."
 # Careful... ownership & mode are not preserved here!
-cp -rnv default/vms/* /etc/default/vms
+cp -riv default/vms/* /etc/default/vms
 
 echo -e "\nvm-boot-protect installed!\n"
 

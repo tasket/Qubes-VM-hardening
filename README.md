@@ -1,20 +1,19 @@
-# Qubes-VM-hardening
+## Qubes VM hardening
 
-Fend off malware at VM startup: Lock-down and quarantine scripts in /rw private storage that affect the execution environment.
-Leverages Qubes template non-persistence to enhance the guest operating system's own defenses.
-   
+Leverage Qubes template non-persistence to fend off malware at VM startup: Lock-down, quarantine and check contents of /rw private storage that affect the execution environment.
 
-## vm-boot-protect.service
+
+### vm-boot-protect.service
    * Acts at VM startup before private volume /rw mounts
    * User: Protect /home desktop & shell startup executables
    * Root: Quarantine all /rw configs & scripts, with whitelisting
    * Re-deploy custom or default files to /rw on each boot
-   * SHA256 hashing guards against unwanted changes
+   * SHA256 hash checking against unwanted changes
    * Provides rescue shell on error or request
    * Works with template-based AppVMs, sys-net and sys-vpn
 
 
-## Installing
+### Installing
 
 1. In a template VM, install the service files
    ```
@@ -30,7 +29,7 @@ Leverages Qubes template non-persistence to enhance the guest operating system's
 
 3. Disable Qubes default passwordless-root. This is necessary for the above measures to work effectively...
 
-   For Debian-based templates `configure-sudo-prompt` will launch automatically to [enable a sudo yes/no prompt](https://www.qubes-os.org/doc/vm-sudo/#replacing-password-less-root-access-with-dom0-user-prompt) that appears in dom0. This handles the template configuration then displays several commands to manually configure dom0 (the dom0 step is required only once, regardless of how many templates you configure). You may test the `configure-sudo-prompt` script in a regular template-based appVM to see if it works, although the effect will be temporary.
+   For Debian-based templates the installer will launch `configure-sudo-prompt` automatically to enable a sudo [yes/no prompt](https://www.qubes-os.org/doc/vm-sudo/#replacing-password-less-root-access-with-dom0-user-prompt) that appears in dom0. This handles the template configuration then displays several commands to manually configure dom0 (the dom0 step is required only once, regardless of how many templates you configure). You may test the `configure-sudo-prompt` script in a regular template-based appVM to see if it works, although the effect will be temporary.
 
    Alternately, you can uninstall the `qubes-core-agent-passwordless-root` package from the template. After doing this, you will have to use `qvm-run -u root` from dom0 to run any VM commands as root.
    
@@ -55,7 +54,7 @@ Leverages Qubes template non-persistence to enhance the guest operating system's
 
    **Whitelists** are checked in ../vms/vms.all.whitelist and ../vms/$vmname.whitelist files, and file paths contained in them must start with `/rw/`. A default is provided in ..vms/sys-net.whitelist to preserve Network Manager connections and sleep module list in sys-net.
 
-   **Deployment** files are copied _recursively_ from ../vms/vms.all/rw/ and ../vms/$vmname/rw/ dirs. Example is to place the .bashrc file in /etc/default/vms/vms.all/rw/home/user/.bashrc .
+   **Deployment** files are copied _recursively_ from ../vms/vms.all/rw/ and ../vms/$vmname/rw/ dirs. Example is to place the .bashrc file in /etc/default/vms/vms.all/rw/home/user/.bashrc for deployment to /rw/home/user/.bashrc.
 
 
 ### Scope and Limitations
@@ -73,8 +72,10 @@ Leverages Qubes template non-persistence to enhance the guest operating system's
    * All the user-writable startup files in /home should be protected by the immutable flag; See issue #9 if you notice an omission or other problem. An extra step of disabling the flag using `sudo chattr -i` is required whenever the user wants to modify these startup files.
 
    * Adding /home or subdirs of it to $privdirs is possible. This would quarantine everything there to set the stage for applying whitelists on /home contents. The $privdirs variable can be changed via the service file, for example adding a .conf file in /lib/systemd/system/vm-boot-protect.d.
+
+   * The sys-net VM should work 'out of the box' with the vm-boot-protect-root service via the included whitelist file.
    
-   * Using the -root option with a [VPN VM](https://github.com/tasket/Qubes-vpn-support) can be approached different ways: SHA + whitelist combination can be made for the appropriate files. Alternately, all VPN configs can be added under /etc/default/vms/vmname/rw so they'll be automatically deployed.
+   * Using the -root service with a [VPN VM](https://github.com/tasket/Qubes-vpn-support) requires manual configuration in the template and can be approached different ways: Whitelist (optionally with SHA) can be made for the appropriate files. Alternately, all VPN configs can be added under /etc/default/vms/vmname/rw so they'll be automatically deployed.
 
    * Currently the service cannot seamlessly handle 'first boot' when the private volume must be initialized. If you enabled the service on a VM before its first startup, on first start you will see a special rescue shell telling you to restart the VM. Subsequent starts will proceed normally.
  

@@ -1,11 +1,11 @@
 #!/bin/sh
 
-##  Protect startup of Qubes VMs from /rw scripts    ##
+##  Protect startup of Qubes VMs from /rw content    ##
 ##  https://github.com/tasket/Qubes-VM-hardening     ##
 ##  Copyright 2017-2018 Christopher Laprise          ##
 ##                      tasket@protonmail.com        ##
 
-#   This is part of Qubes-VM-hardening.
+#   This file is part of Qubes-VM-hardening.
 #   Qubes-VM-hardening is free software: you can redistribute it and/or modify
 #   it under the terms of the GNU General Public License as published by
 #   the Free Software Foundation, either version 3 of the License, or
@@ -17,7 +17,7 @@
 #   GNU General Public License for more details.
 #
 #   You should have received a copy of the GNU General Public License
-#   along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
+#   along with Qubes-VM-hardening. If not, see <http://www.gnu.org/licenses/>.
 
 
 # Source Qubes library.
@@ -111,7 +111,7 @@ else
         touch /var/run/qubes/VM-BOOT-PROTECT-INITIALIZERW
         abort_startup OK "FIRST BOOT INITIALIZATION: PLEASE RESTART VM!"
     else
-        abort_startup RELOCATE "Mount and mount-dirs failed; BAD private volume!"
+        abort_startup RELOCATE "Mount failed; BAD private volume!"
     fi
 fi
 
