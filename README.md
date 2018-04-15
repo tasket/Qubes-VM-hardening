@@ -80,7 +80,7 @@ Leverage Qubes template non-persistence to fend off malware at VM startup: Lock-
    * Currently the service cannot seamlessly handle 'first boot' when the private volume must be initialized. If you enabled the service on a VM before its first startup, on first start the shell will display a notice telling you to restart the VM. Subsequent starts will proceed normally.
  
 ## Releases
-   - v0.8.1  Working rescue shell. Add sys-net whitelist, sudo config, fixes.
+   - v0.8.2  Working rescue shell. Add sys-net whitelist, sudo config, fixes.
    - v0.8.0  Adds protection to /rw, file SHA checksums, whitelists, deployment
    - v0.2.0  Protects /home/user files and dirs
 
