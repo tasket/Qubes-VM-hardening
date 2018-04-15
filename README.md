@@ -50,7 +50,7 @@ Leverage Qubes template non-persistence to fend off malware at VM startup: Lock-
 
    Files can be added to /etc/default/vms in the template to enable the following features...
 
-   **Hashes/Checksums** are checked in ../vms/vms.all.SHA and ../vms/$vmname.SHA files. File paths contained in them must be absolute. See man page for `sha256sum -c`.
+   **Hashes/Checksums** are checked in ../vms/vms.all.SHA and ../vms/$vmname.SHA files. File paths contained in them must be absolute, and references to '/home' must be prefixed with '/rw/'. Hashes in $vmname.SHA will override hashes specified for the same paths in vms.all.SHA. See also man page for `sha256sum -c`.
 
    **Whitelists** are checked in ../vms/vms.all.whitelist and ../vms/$vmname.whitelist files, and file paths contained in them must start with `/rw/`. A default is provided in ..vms/sys-net.whitelist to preserve Network Manager connections and sleep module list in sys-net.
 
@@ -77,7 +77,7 @@ Leverage Qubes template non-persistence to fend off malware at VM startup: Lock-
    
    * Using the -root service with a [VPN VM](https://github.com/tasket/Qubes-vpn-support) requires manual configuration in the template and can be approached different ways: Whitelist (optionally with SHA) can be made for the appropriate files. Alternately, all VPN configs can be added under /etc/default/vms/vmname/rw so they'll be automatically deployed.
 
-   * Currently the service cannot seamlessly handle 'first boot' when the private volume must be initialized. If you enabled the service on a VM before its first startup, on first start you will see a special rescue shell telling you to restart the VM. Subsequent starts will proceed normally.
+   * Currently the service cannot seamlessly handle 'first boot' when the private volume must be initialized. If you enabled the service on a VM before its first startup, on first start the shell will display a notice telling you to restart the VM. Subsequent starts will proceed normally.
  
 ## Releases
    - v0.8.1  Working rescue shell. Add sys-net whitelist, sudo config, fixes.

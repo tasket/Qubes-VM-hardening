@@ -36,6 +36,7 @@ rw=/mnt/rwtmp
 rwbak=$rw/vm-boot-protect
 errlog=/var/run/vm-protect-error
 defdir=/etc/default/vms
+version="0.8.2"
 
 
 # Function: Make user scripts immutable.
@@ -128,15 +129,25 @@ if qsvc vm-boot-protect-root && is_rwonly_persistent; then
 
     # Check hashes
     checkcode=0
-    echo "File hash checks:" >/tmp/vm-protect-sum-error
-    for vmset in vms.all $vmname; do
-        if [ -f $defdir/$vmset.SHA ]; then
-            sha256sum --strict -c $defdir/$vmset.SHA >>$errlog 2>&1
-            checkcode=$((checkcode+$?))
-        fi
-    done
+    if [ -e $defdir/$vmname.SHA ]; then
+        # remove padding and add number field
+        sed 's/^ *//; s/ *$//; /^$/d; s/^/1 /' $defdir/$vmname.SHA \
+          >/tmp/vm-boot-protect-sha
+    fi
+    if [ -e $defdir/vms.all.SHA ]; then
+        sed 's/^ *//; s/ *$//; /^$/d; s/^/2 /' $defdir/vms.all.SHA \
+          >>/tmp/vm-boot-protect-sha
+    fi
+    if [ -e /tmp/vm-boot-protect-sha ]; then
+        echo "Checking file hashes." |tee $errlog
+        # Get unique paths, remove field and switch path to $rw before check;
+        # this allows hashes in $vmname.SHA to override ones in vms.all.SHA.
+        sort --unique --key=3 /tmp/vm-boot-protect-sha  \
+        | sed -r 's|^[1-2] (.*[[:space:]]*)/rw|\1'$rw'|' \
+        | sha256sum --strict -c >>$errlog; checkcode=$?
+    fi
 
-    # Stop system startup on checksum mismatch:
+    # Divert startup on hash mismatch:
     if [ $checkcode != 0 ]; then
         abort_startup RELOCATE "Hash check failed!"
     fi
