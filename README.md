@@ -39,7 +39,7 @@ Leverage Qubes template non-persistence to fend off malware at VM startup: Lock-
 
    Operation is automatic and will result in either a normal boot process with full access to the private volume at /rw, or a rescue service mode providing an xterm shell and the private volume quarantined at /dev/badxvdb.
 
-   At the `vm-boot-protect` level, certain executable files in /home will be made immutable so PATH and `alias` cannot be used to hijack commands like `su` and `sudo`, nor can impostor apps autostart whenever a VM starts. This prevents normal-privilege attacks from gaining persistence at startup. 
+   At the `vm-boot-protect` level, certain executable files in /home will be made immutable so PATH and `alias` cannot be used to hijack commands like `su` and `sudo`, nor can impostor apps autostart whenever a VM starts. This can be added to virtually any Debian or Fedora VM and prevents unprivileged attacks from gaining persistence at startup. 
 
    At the `vm-boot-protect-root` level, the $privdirs paths will be renamed as backups, effectively removing them from the VM startup. Then whitelisting, hash/checksumming and deployment are done (if configured). This protects VM startup from attacks that had previously achieved privilege escalation.
 
@@ -54,7 +54,21 @@ Leverage Qubes template non-persistence to fend off malware at VM startup: Lock-
 
    **Whitelists** are checked in ../vms/vms.all.whitelist and ../vms/$vmname.whitelist files, and file paths contained in them must start with `/rw/`. A default is provided in ..vms/sys-net.whitelist to preserve Network Manager connections and sleep module list in sys-net.
 
-   **Deployment** files are copied _recursively_ from ../vms/vms.all/rw/ and ../vms/$vmname/rw/ dirs. Example is to place the .bashrc file in /etc/default/vms/vms.all/rw/home/user/.bashrc for deployment to /rw/home/user/.bashrc.
+   **Deployment** files are copied _recursively_ from ../vms/vms.all/rw/ and ../vms/$vmname/rw/ dirs. Example is to place the .bashrc file in /etc/default/vms/vms.all/rw/home/user/.bashrc for deployment to /rw/home/user/.bashrc. Once copying is complete,
+the /etc/defaults/vms folder is deleted from the running VM (this has no effect on the original in the template).
+
+### Where to use: Basic examples
+
+After installing into a template, simply enable `vm-boot-protect-root` service without configuration. Recommended for the following types of VMs:
+  o Service VMs: sys-usb and sys-net.
+  o App VMs: untrusted, personal, banking, vault, etc. This assumes using regular Linux apps without tailored Qubes-specific settings in /rw such as *Firefox, Chromium, Thunderbird, KeePassX, office apps, media playback & editing*, etc. For these and many more, no configuration should be necessary.
+
+Examples where `vm-boot-protect-root` requires configuration: sys-vpn (see Notes), Martus and Whonix (needs testing). Note that VMs sys-vpn and sys-firewall are fairly low-risk VMs so there may not be a compelling reason to use the service with them.
+
+Examples where -root should *not* be enabled:
+  o DispVMs. Sensible option is to enable sudo security for DispVM templates; service can be installed into template and left unused.
+  o Standalone VMs. Plain `vm-boot-protect` makes more sense for these.
+  o Non-Linux VMs (currently unsupported for any mode)
 
 
 ### Scope and Limitations
@@ -73,13 +87,14 @@ Leverage Qubes template non-persistence to fend off malware at VM startup: Lock-
 
    * Adding /home or subdirs of it to $privdirs is possible. This would quarantine everything there to set the stage for applying whitelists on /home contents. The $privdirs variable can be changed via the service file, for example adding a .conf file in /lib/systemd/system/vm-boot-protect.d.
 
-   * The sys-net VM should work 'out of the box' with the vm-boot-protect-root service via the included whitelist file.
+   * The sys-net VM should work 'out of the box' with the vm-boot-protect-root service via the included whitelist file. Additional network VMs may require configuration, such as `cp sys-net.whitelist sys-net2.whitelist`.
    
    * Using the -root service with a [VPN VM](https://github.com/tasket/Qubes-vpn-support) requires manual configuration in the template and can be approached different ways: Whitelist (optionally with SHA) can be made for the appropriate files. Alternately, all VPN configs can be added under /etc/default/vms/vmname/rw so they'll be automatically deployed.
 
    * Currently the service cannot seamlessly handle 'first boot' when the private volume must be initialized. If you enabled the service on a VM before its first startup, on first start the shell will display a notice telling you to restart the VM. Subsequent starts will proceed normally.
- 
+   
 ## Releases
+   - v0.8.3  Fix for install script copying to /etc/default/vms
    - v0.8.2  Working rescue shell. Add sys-net whitelist, sudo config, fixes.
    - v0.8.0  Adds protection to /rw, file SHA checksums, whitelists, deployment
    - v0.2.0  Protects /home/user files and dirs

@@ -1,5 +1,6 @@
 #!/bin/bash
 # From https://github.com/tasket/Qubes-VM-hardening
+# installer version 0.8.3
 
 set -e
 [ `id -u` -eq 0 ] || exit
@@ -15,6 +16,7 @@ systemctl daemon-reload
 systemctl enable vm-boot-protect.service
 
 echo "Adding defaults in /etc/default/vms..."
+mkdir -p /etc/default/vms
 # Careful... ownership & mode are not preserved here!
 cp -riv default/vms/* /etc/default/vms
 
