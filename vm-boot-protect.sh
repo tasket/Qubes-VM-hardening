@@ -2,7 +2,7 @@
 
 ##  Protect startup of Qubes VMs from /rw content    ##
 ##  https://github.com/tasket/Qubes-VM-hardening     ##
-##  Copyright 2017-2018 Christopher Laprise          ##
+##  Copyright 2017-2019 Christopher Laprise          ##
 ##                      tasket@protonmail.com        ##
 
 #   This file is part of Qubes-VM-hardening.
@@ -28,7 +28,7 @@
 chfiles=".bashrc .bash_profile .bash_login .bash_logout .profile \
 .xprofile .xinitrc .xserverrc .xsession"
 chdirs="bin .local/bin .config/autostart .config/plasma-workspace/env \
-.config/plasma-workspace/shutdown .config/autostart-scripts"
+.config/plasma-workspace/shutdown .config/autostart-scripts .config/systemd"
 
 vmname=`qubesdb-read /name`
 dev=/dev/xvdb
@@ -36,7 +36,7 @@ rw=/mnt/rwtmp
 rwbak=$rw/vm-boot-protect
 errlog=/var/run/vm-protect-error
 defdir=/etc/default/vms
-version="0.8.2"
+version="0.8.4"
 
 
 # Function: Make user scripts immutable.

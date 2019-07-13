@@ -60,15 +60,16 @@ the /etc/defaults/vms folder is deleted from the running VM (this has no effect 
 ### Where to use: Basic examples
 
 After installing into a template, simply enable `vm-boot-protect-root` service without configuration. Recommended for the following types of VMs:
-  o Service VMs: sys-usb and sys-net.
-  o App VMs: untrusted, personal, banking, vault, etc. This assumes using regular Linux apps without tailored Qubes-specific settings in /rw such as *Firefox, Chromium, Thunderbird, KeePassX, office apps, media playback & editing*, etc. For these and many more, no configuration should be necessary.
+  * Service VMs: sys-usb and sys-net.
+  * App VMs: untrusted, personal, banking, vault, etc. This assumes using regular Linux apps without tailored Qubes-specific settings in /rw such as *Firefox, Chromium, Thunderbird, KeePassX, office apps, media playback & editing*, etc. For these and many more, no configuration should be necessary.
 
 Examples where `vm-boot-protect-root` requires configuration: sys-vpn (see Notes), Martus and Whonix (needs testing). Note that VMs sys-vpn and sys-firewall are fairly low-risk VMs so there may not be a compelling reason to use the service with them.
 
 Examples where -root should *not* be enabled:
-  o DispVMs. Sensible option is to enable sudo security for DispVM templates; service can be installed into template and left unused.
-  o Standalone VMs. Plain `vm-boot-protect` makes more sense for these.
-  o Non-Linux VMs (currently unsupported for any mode)
+  * DispVMs. Sensible option is to enable sudo security for DispVM templates; service can be installed into template and left unused.
+  * Whonix VMs. Plain `vm-boot-protect` is best used until Whonix persistence files can be mapped.
+  * Standalone VMs. Plain `vm-boot-protect` makes more sense for these.
+  * Non-Linux VMs (currently unsupported for any mode)
 
 
 ### Scope and Limitations
@@ -94,6 +95,7 @@ Examples where -root should *not* be enabled:
    * Currently the service cannot seamlessly handle 'first boot' when the private volume must be initialized. If you enabled the service on a VM before its first startup, on first start the shell will display a notice telling you to restart the VM. Subsequent starts will proceed normally.
    
 ## Releases
+   - v0.8.4  Add protection to /home/user/.config/systemd
    - v0.8.3  Fix for install script copying to /etc/default/vms
    - v0.8.2  Working rescue shell. Add sys-net whitelist, sudo config, fixes.
    - v0.8.0  Adds protection to /rw, file SHA checksums, whitelists, deployment
