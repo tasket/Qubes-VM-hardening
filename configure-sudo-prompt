@@ -34,15 +34,6 @@ _EOF
     mv -f /etc/polkit-1/localauthority/50-local.d/qubes-allow-all.pkla \
       /etc/polkit-1/localauthority_50-locald_qubes-allow-all.pkla.bak
 
-    if [ -e /etc/whonix.d ]; then
-        cat >/etc/sudoers.d/zz99_sudoprompt <<_EOF
-ALL ALL=NOPASSWD: /usr/sbin/virt-what
-ALL ALL=NOPASSWD: /usr/sbin/service whonixcheck restart
-ALL ALL=NOPASSWD: /usr/sbin/service whonixcheck start
-ALL ALL=NOPASSWD: /usr/sbin/service whonixcheck stop
-ALL ALL=NOPASSWD: /usr/sbin/service whonixcheck status
-_EOF
-    fi
     echo "Done."
 
     echo '
