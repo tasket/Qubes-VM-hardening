@@ -90,6 +90,10 @@ if ! is_rwonly_persistent; then
     if qsvc vm-boot-protect; then
         make_immutable
     fi
+    if ! is_template_vm; then
+        # Keep configs invisible for standalone vms
+        rm -rf "$defdir"
+    fi
     exit 0
     # cannot use abort_startup() before this point
 fi
@@ -100,22 +104,23 @@ if qsvc vm-boot-protect-cli; then
     abort_startup RELOCATE "CLI requested."
 fi
 
-# Mount private volume in temp location
-mkdir -p $rw
-if [ -e $dev ] && mount -o ro $dev $rw ; then
-    echo "Good read-only mount."
-else
-    echo "Mount failed."
-    # decide if this is initial boot or a bad volume
-    private_size_512=$(blockdev --getsz "$dev")
-    if head -c $(( private_size_512 * 512 )) /dev/zero | diff "$dev" - >/dev/null; then
-        touch /var/run/qubes/VM-BOOT-PROTECT-INITIALIZERW
-        abort_startup OK "FIRST BOOT INITIALIZATION: PLEASE RESTART VM!"
+if qsvc vm-boot-protect || qsvc vm-boot-protect-root; then
+    # Mount private volume in temp location
+    mkdir -p $rw
+    if [ -e $dev ] && mount -o ro $dev $rw ; then
+        echo "Good read-only mount."
     else
-        abort_startup RELOCATE "Mount failed; BAD private volume!"
+        echo "Mount failed."
+        # decide if this is initial boot or a bad volume
+        private_size_512=$(blockdev --getsz "$dev")
+        if head -c $(( private_size_512 * 512 )) /dev/zero | diff "$dev" - >/dev/null; then
+            touch /var/run/qubes/VM-BOOT-PROTECT-INITIALIZERW
+            abort_startup OK "FIRST BOOT INITIALIZATION: PLEASE RESTART VM!"
+        else
+            abort_startup RELOCATE "Mount failed; BAD private volume!"
+        fi
     fi
 fi
-
 
 
 # Protection measures for /rw dirs:
@@ -215,14 +220,17 @@ if qsvc vm-boot-protect-root && is_rwonly_persistent; then
             echo "Copy files from $defdir/$vmset/rw"
             cp -af $defdir/$vmset/rw/* $rw
         fi
-
     done
-
-    # Keep configs invisible at runtime...
-    rm -rf "$defdir"
 
 fi
 
-make_immutable
-umount $rw
+if qsvc vm-boot-protect || qsvc vm-boot-protect-root; then
+    make_immutable
+    umount $rw
+fi
+
+# Keep configs invisible at runtime...
+rm -rf "$defdir"
+
+
 exit 0
