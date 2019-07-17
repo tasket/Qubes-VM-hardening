@@ -3,10 +3,18 @@
 
 set -e
 [ `id -u` -eq 0 ] || exit
-if [ ! -e /etc/debian_version ]; then
-    echo "Debian-based template required for autoconfiguration. 
-See qubes-os.org/doc/vm-sudo for manual instructions."
+
+
+if [ ! -e /etc/sudoers.d/qubes ]; then
+    echo "The 'qubes-core-agent-passwordless-root' package does not appear"
+    echo "to be present. Sudo autoconfiguration is unnecessary."
     exit 0
+fi
+
+if [ ! -e /etc/debian_version ]; then
+    echo "Debian-based template required for sudo autoconfiguration. 
+See qubes-os.org/doc/vm-sudo for manual instructions."
+    exit 1
 fi
 
 echo -e "\n--+  Enable yes/no authentication prompt for sudo  +--
@@ -15,7 +23,7 @@ should me made of this template!"
 read -p "Configure sudo authentication prompt now? (y/n): " answer
 if [[ $answer == @(y|Y) ]]; then
 
-    mv -fb /etc/pam.d/common-auth /etc/pam.d/common-auth.bak
+    mv --backup=numbered -fb /etc/pam.d/common-auth /etc/pam.d/common-auth.bak
     cat >/etc/pam.d/common-auth <<_EOF
 auth  [success=1 default=ignore]  pam_exec.so seteuid /usr/lib/qubes/qrexec-client-vm dom0 qubes.VMAuth /bin/grep -q ^1$
 auth  requisite  pam_deny.so
@@ -34,15 +42,6 @@ _EOF
     mv -f /etc/polkit-1/localauthority/50-local.d/qubes-allow-all.pkla \
       /etc/polkit-1/localauthority_50-locald_qubes-allow-all.pkla.bak
 
-    if [ -e /etc/whonix.d ]; then
-        cat >/etc/sudoers.d/zz99_sudoprompt <<_EOF
-ALL ALL=NOPASSWD: /usr/sbin/virt-what
-ALL ALL=NOPASSWD: /usr/sbin/service whonixcheck restart
-ALL ALL=NOPASSWD: /usr/sbin/service whonixcheck start
-ALL ALL=NOPASSWD: /usr/sbin/service whonixcheck stop
-ALL ALL=NOPASSWD: /usr/sbin/service whonixcheck status
-_EOF
-    fi
     echo "Done."
 
     echo '
