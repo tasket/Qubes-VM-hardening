@@ -7,13 +7,13 @@ set -e
 
 if [ ! -e /etc/sudoers.d/qubes ]; then
     echo "The 'qubes-core-agent-passwordless-root' package does not appear"
-    echo "to be present. Sudo autoconfiguration is unnecessary."
+    echo "to be present or configured; sudo autoconfiguration skipped."
     exit 0
 fi
 
 if [ ! -e /etc/debian_version ]; then
     echo "Debian-based template required for sudo autoconfiguration. 
-See qubes-os.org/doc/vm-sudo for manual instructions."
+See https://qubes-os.org/doc/vm-sudo for manual instructions."
     exit 1
 fi
 
@@ -23,7 +23,7 @@ should me made of this template!"
 read -p "Configure sudo authentication prompt now? (y/n): " answer
 if [[ $answer == @(y|Y) ]]; then
 
-    mv --backup=numbered -fb /etc/pam.d/common-auth /etc/pam.d/common-auth.bak
+    mv -fb /etc/pam.d/common-auth /etc/pam.d/common-auth~
     cat >/etc/pam.d/common-auth <<_EOF
 auth  [success=1 default=ignore]  pam_exec.so seteuid /usr/lib/qubes/qrexec-client-vm dom0 qubes.VMAuth /bin/grep -q ^1$
 auth  requisite  pam_deny.so
@@ -38,9 +38,9 @@ _EOF
     sed -ri 's/^(auth[[:space:]]sufficient[[:space:]]pam_permit.so)/#\1/' /etc/pam.d/su
 
     mv -f /etc/polkit-1/rules.d/00-qubes-allow-all.rules \
-      /etc/polkit-1/rulesd_00-qubes-allow-all.rules.bak
+      /etc/polkit-1/rulesd_00-qubes-allow-all.rules.bak || true
     mv -f /etc/polkit-1/localauthority/50-local.d/qubes-allow-all.pkla \
-      /etc/polkit-1/localauthority_50-locald_qubes-allow-all.pkla.bak
+      /etc/polkit-1/localauthority_50-locald_qubes-allow-all.pkla.bak || true
 
     echo "Done."
 
