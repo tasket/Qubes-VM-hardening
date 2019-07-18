@@ -2,7 +2,7 @@
 
 ##  Protect startup of Qubes VMs from /rw content    ##
 ##  https://github.com/tasket/Qubes-VM-hardening     ##
-##  Copyright 2017-2018 Christopher Laprise          ##
+##  Copyright 2017-2019 Christopher Laprise          ##
 ##                      tasket@protonmail.com        ##
 
 #   This file is part of Qubes-VM-hardening.
@@ -28,7 +28,7 @@
 chfiles=".bashrc .bash_profile .bash_login .bash_logout .profile \
 .xprofile .xinitrc .xserverrc .xsession"
 chdirs="bin .local/bin .config/autostart .config/plasma-workspace/env \
-.config/plasma-workspace/shutdown .config/autostart-scripts"
+.config/plasma-workspace/shutdown .config/autostart-scripts .config/systemd"
 
 vmname=`qubesdb-read /name`
 dev=/dev/xvdb
@@ -36,7 +36,7 @@ rw=/mnt/rwtmp
 rwbak=$rw/vm-boot-protect
 errlog=/var/run/vm-protect-error
 defdir=/etc/default/vms
-version="0.8.2"
+version="0.8.4"
 
 
 # Function: Make user scripts immutable.
@@ -90,6 +90,10 @@ if ! is_rwonly_persistent; then
     if qsvc vm-boot-protect; then
         make_immutable
     fi
+    if ! is_template_vm; then
+        # Keep configs invisible for standalone vms
+        rm -rf "$defdir"
+    fi
     exit 0
     # cannot use abort_startup() before this point
 fi
@@ -100,22 +104,23 @@ if qsvc vm-boot-protect-cli; then
     abort_startup RELOCATE "CLI requested."
 fi
 
-# Mount private volume in temp location
-mkdir -p $rw
-if [ -e $dev ] && mount -o ro $dev $rw ; then
-    echo "Good read-only mount."
-else
-    echo "Mount failed."
-    # decide if this is initial boot or a bad volume
-    private_size_512=$(blockdev --getsz "$dev")
-    if head -c $(( private_size_512 * 512 )) /dev/zero | diff "$dev" - >/dev/null; then
-        touch /var/run/qubes/VM-BOOT-PROTECT-INITIALIZERW
-        abort_startup OK "FIRST BOOT INITIALIZATION: PLEASE RESTART VM!"
+if qsvc vm-boot-protect || qsvc vm-boot-protect-root; then
+    # Mount private volume in temp location
+    mkdir -p $rw
+    if [ -e $dev ] && mount -o ro $dev $rw ; then
+        echo "Good read-only mount."
     else
-        abort_startup RELOCATE "Mount failed; BAD private volume!"
+        echo "Mount failed."
+        # decide if this is initial boot or a bad volume
+        private_size_512=$(blockdev --getsz "$dev")
+        if head -c $(( private_size_512 * 512 )) /dev/zero | diff "$dev" - >/dev/null; then
+            touch /var/run/qubes/VM-BOOT-PROTECT-INITIALIZERW
+            abort_startup OK "FIRST BOOT INITIALIZATION: PLEASE RESTART VM!"
+        else
+            abort_startup RELOCATE "Mount failed; BAD private volume!"
+        fi
     fi
 fi
-
 
 
 # Protection measures for /rw dirs:
@@ -215,14 +220,17 @@ if qsvc vm-boot-protect-root && is_rwonly_persistent; then
             echo "Copy files from $defdir/$vmset/rw"
             cp -af $defdir/$vmset/rw/* $rw
         fi
-
     done
-
-    # Keep configs invisible at runtime...
-    rm -rf "$defdir"
 
 fi
 
-make_immutable
-umount $rw
+if qsvc vm-boot-protect || qsvc vm-boot-protect-root; then
+    make_immutable
+    umount $rw
+fi
+
+# Keep configs invisible at runtime...
+rm -rf "$defdir"
+
+
 exit 0

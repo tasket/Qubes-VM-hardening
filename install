@@ -1,6 +1,6 @@
 #!/bin/bash
 # From https://github.com/tasket/Qubes-VM-hardening
-# installer version 0.8.3
+# installer version 0.8.4
 
 set -e
 [ `id -u` -eq 0 ] || exit
