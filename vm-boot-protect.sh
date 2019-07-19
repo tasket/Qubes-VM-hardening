@@ -90,7 +90,7 @@ if ! is_rwonly_persistent; then
     if qsvc vm-boot-protect; then
         make_immutable
     fi
-    if ! is_template_vm; then
+    if ! is_templatevm; then
         # Keep configs invisible for standalone vms
         rm -rf "$defdir"
     fi
