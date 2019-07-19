@@ -82,7 +82,10 @@ Examples where -root should *not* be enabled:
 
 ### Notes
 
-   * The service name has been changed from `vm-sudo-protect` in pre-release to `vm-boot-protect`. The install script will automatically try to disable the old service.
+   * A bug in v0.8.4 will erase anything in '/etc/default/vms' when booting into the template. For proper
+   future operation with sys-net or other VMs you may have customized in that path, updating Qubes-VM-hardening
+   to the latest version (using the install script) is recommended, along with restoring any custom files
+   in '/etc/default/vms'. Thanks to Daniel Moerner for submitting the patch!
 
    * All the user-writable startup files in /home should be protected by the immutable flag; See issue #9 if you notice an omission or other problem. An extra step of disabling the flag using `sudo chattr -i` is required whenever the user wants to modify these startup files.
 
@@ -95,6 +98,7 @@ Examples where -root should *not* be enabled:
    * Currently the service cannot seamlessly handle 'first boot' when the private volume must be initialized. If you enabled the service on a VM before its first startup, on first start the shell will display a notice telling you to restart the VM. Subsequent starts will proceed normally.
    
 ## Releases
+   - v0.8.5  Fix template detection, /etc/default/vms erasure
    - v0.8.4  Add protection to /home/user/.config/systemd
    - v0.8.3  Fix for install script copying to /etc/default/vms
    - v0.8.2  Working rescue shell. Add sys-net whitelist, sudo config, fixes.

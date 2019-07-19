@@ -36,7 +36,7 @@ rw=/mnt/rwtmp
 rwbak=$rw/vm-boot-protect
 errlog=/var/run/vm-protect-error
 defdir=/etc/default/vms
-version="0.8.4"
+version="0.8.5"
 
 
 # Function: Make user scripts immutable.
