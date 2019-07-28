@@ -25,10 +25,10 @@
 
 # Define sh, bash, X and desktop init scripts in /home/user
 # to be protected
-chfiles=".bashrc .bash_profile .bash_login .bash_logout .profile \
-.xprofile .xinitrc .xserverrc .xsession"
-chdirs="bin .local/bin .config/autostart .config/plasma-workspace/env \
-.config/plasma-workspace/shutdown .config/autostart-scripts .config/systemd"
+chfiles=${chfiles:-".bashrc .bash_profile .bash_login .bash_logout .profile \
+.xprofile .xinitrc .xserverrc .xsession"}
+chdirs=${chdirs:-"bin .local/bin .config/autostart .config/plasma-workspace/env \
+.config/plasma-workspace/shutdown .config/autostart-scripts .config/systemd"}
 
 vmname=`qubesdb-read /name`
 dev=/dev/xvdb
@@ -39,8 +39,20 @@ defdir=/etc/default/vms
 version="0.8.5"
 
 
+# Remount fs as read-write
+remount_rw() {
+    # Begin write operations
+    if [ -e $dev ] && mount -o remount,rw $dev $rw ; then
+        echo Good rw remount.
+    else
+        abort_startup RELOCATE "Remount failed!"
+    fi
+}
+
+
 # Function: Make user scripts immutable.
 make_immutable() {
+    remount_rw
     #initialize_home $rw/home ifneeded
     cd $rw/home/user
     mkdir -p $chdirs
@@ -48,6 +60,7 @@ make_immutable() {
     chattr -R -f +i $chfiles $chdirs
     cd /root
 }
+
 
 # Start rescue shell then exit/fail
 abort_startup() {
@@ -85,19 +98,6 @@ abort_startup() {
 }
 
 
-# Don't bother with root protections in template or standalone
-if ! is_rwonly_persistent; then
-    if qsvc vm-boot-protect; then
-        make_immutable
-    fi
-    if ! is_templatevm; then
-        # Keep configs invisible for standalone vms
-        rm -rf "$defdir"
-    fi
-    exit 0
-    # cannot use abort_startup() before this point
-fi
-
 echo >$errlog # Clear
 
 if qsvc vm-boot-protect-cli; then
@@ -120,6 +120,15 @@ if qsvc vm-boot-protect || qsvc vm-boot-protect-root; then
             abort_startup RELOCATE "Mount failed; BAD private volume!"
         fi
     fi
+
+	# Don't bother with root protections in template or standalone
+	if ! is_rwonly_persistent; then
+		if qsvc vm-boot-protect; then
+		    make_immutable
+		fi
+		exit 0
+	fi
+
 fi
 
 
@@ -157,12 +166,7 @@ if qsvc vm-boot-protect-root && is_rwonly_persistent; then
         abort_startup RELOCATE "Hash check failed!"
     fi
 
-    # Begin write operations
-    if [ -e $dev ] && mount -o remount,rw $dev $rw ; then
-        echo Good rw remount.
-    else
-        abort_startup RELOCATE "Remount failed!"
-    fi
+    remount_rw
 
     # Files mutable for del/copy operations
     cd $rw/home/user
@@ -224,13 +228,12 @@ if qsvc vm-boot-protect-root && is_rwonly_persistent; then
 
 fi
 
+# Keep configs invisible at runtime...
+rm -rf "$defdir"
+
 if qsvc vm-boot-protect || qsvc vm-boot-protect-root; then
     make_immutable
     umount $rw
 fi
-
-# Keep configs invisible at runtime...
-rm -rf "$defdir"
-
 
 exit 0
