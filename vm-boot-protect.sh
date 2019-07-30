@@ -23,13 +23,6 @@
 # Source Qubes library.
 . /usr/lib/qubes/init/functions
 
-# Define sh, bash, X and desktop init scripts in /home/user
-# to be protected
-chfiles=${chfiles:-".bashrc .bash_profile .bash_login .bash_logout .profile \
-.xprofile .xinitrc .xserverrc .xsession"}
-chdirs=${chdirs:-"bin .local/bin .config/autostart .config/plasma-workspace/env \
-.config/plasma-workspace/shutdown .config/autostart-scripts .config/systemd"}
-
 vmname=`qubesdb-read /name`
 dev=/dev/xvdb
 rw=/mnt/rwtmp
@@ -37,6 +30,27 @@ rwbak=$rw/vm-boot-protect
 errlog=/var/run/vm-protect-error
 defdir=/etc/default/vms
 version="0.8.5"
+
+# Define sh, bash, X and desktop init scripts in /home/user
+# to be protected
+chfiles=${chfiles:-".bashrc .bash_profile .bash_login .bash_logout .profile \
+.xprofile .xinitrc .xserverrc .xsession"}
+chfiles_add=""
+chdirs=${chdirs:-"bin .local/bin .config/autostart .config/plasma-workspace/env \
+.config/plasma-workspace/shutdown .config/autostart-scripts .config/systemd"}
+chdirs_add=""
+
+# Define dirs to apply quarrantine / whitelists
+privdirs=${privdirs:-"/rw/config /rw/usrlocal /rw/bind-dirs"}
+privdirs_add=""
+
+# Run rc file commands if they exist
+if [ -e $defdir/vms.all.rc ]; then
+    . $defdir/vms.all.rc
+fi
+if [ -e $defdir/$vmname.rc ]; then
+    . $defdir/$vmname.rc
+fi
 
 
 # Remount fs as read-write
@@ -55,9 +69,8 @@ make_immutable() {
     remount_rw
     #initialize_home $rw/home ifneeded
     cd $rw/home/user
-    mkdir -p $chdirs
-    touch $chfiles
-    chattr -R -f +i $chfiles $chdirs
+    su user -c "mkdir -p $chdirs $chdirs_add; touch $chfiles $chfiles_add"
+    chattr -R -f +i $chfiles $chfiles_add $chdirs $chdirs_add
     cd /root
 }
 
@@ -122,11 +135,9 @@ if qsvc vm-boot-protect || qsvc vm-boot-protect-root; then
     fi
 
 	# Don't bother with root protections in template or standalone
-	if ! is_rwonly_persistent; then
-		if qsvc vm-boot-protect; then
-		    make_immutable
-		fi
-		exit 0
+    if ! is_rwonly_persistent; then
+	    make_immutable
+	    exit 0
 	fi
 
 fi
@@ -137,7 +148,6 @@ fi
 #   * Hashes in vms/vms.all.SHA and vms/$vmname.SHA files will be checked.
 #   * Remove /rw root startup files (config, usrlocal, bind-dirs).
 #   * Contents of vms/vms.all and vms/$vmname folders will be copied.
-privdirs=${privdirs:-"/rw/config /rw/usrlocal /rw/bind-dirs"}
 
 if qsvc vm-boot-protect-root && is_rwonly_persistent; then
 
@@ -170,13 +180,13 @@ if qsvc vm-boot-protect-root && is_rwonly_persistent; then
 
     # Files mutable for del/copy operations
     cd $rw/home/user
-    chattr -R -f -i $chfiles $chdirs $privdirs
+    chattr -R -f -i $chfiles $chfiles_add $chdirs $chdirs_add $privdirs $privdirs_add
     cd /root
 
 
     # Deactivate private.img config dirs
     mkdir -p $rwbak
-    for dir in $privdirs; do # maybe use 'eval' for privdirs quotes/escaping
+    for dir in $privdirs $privdirs_add; do # maybe use 'eval' for privdirs quotes/escaping
         echo "Deactivate $dir"
         subdir=`echo $dir |sed -r 's|^/rw/||'`
         bakdir="$rwbak/BAK-$subdir"
@@ -187,6 +197,15 @@ if qsvc vm-boot-protect-root && is_rwonly_persistent; then
         rm -rf  "$bakdir"
         mv "$rw/$subdir" "$bakdir"
         mkdir -p "$rw/$subdir"
+
+        # Populate /home/user w skel files if it was in privdirs
+        case "$subdir" in
+            "home"|"home/"|"home/user"|"home/user/")
+                mkdir -p $rw/home/user
+                cp -aT /etc/skel $rw/home/user
+                chown -R user:user $rw/home/user
+                ;;
+        esac
     done
 
     for vmset in vms.all $vmname; do
