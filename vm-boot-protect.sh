@@ -44,6 +44,11 @@ chdirs_add=""
 privdirs=${privdirs:-"/rw/config /rw/usrlocal /rw/bind-dirs"}
 privdirs_add=""
 
+
+# Placeholder function: Runs at end
+vm_boot_finish() { }
+
+
 # Run rc file commands if they exist
 if [ -e $defdir/vms.all.rc ]; then
     . $defdir/vms.all.rc
@@ -136,6 +141,7 @@ if qsvc vm-boot-protect || qsvc vm-boot-protect-root; then
 
     # Don't bother with root protections in template or standalone
     if ! is_rwonly_persistent; then
+        vm_boot_finish
         make_immutable
         exit 0
     fi
@@ -256,6 +262,7 @@ fi
 rm -rf "$defdir"
 
 if qsvc vm-boot-protect || qsvc vm-boot-protect-root; then
+    vm_boot_finish
     make_immutable
     umount $rw
 fi
