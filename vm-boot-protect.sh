@@ -134,11 +134,11 @@ if qsvc vm-boot-protect || qsvc vm-boot-protect-root; then
         fi
     fi
 
-	# Don't bother with root protections in template or standalone
+    # Don't bother with root protections in template or standalone
     if ! is_rwonly_persistent; then
-	    make_immutable
-	    exit 0
-	fi
+        make_immutable
+        exit 0
+    fi
 
 fi
 
@@ -191,19 +191,24 @@ if qsvc vm-boot-protect-root && is_rwonly_persistent; then
         subdir=`echo $dir |sed -r 's|^/rw/||'`
         bakdir="$rwbak/BAK-$subdir"
         origdir="$rwbak/ORIG-$subdir"
-        if [ -d "$bakdir" ] && [ ! -d "$origdir" ]; then
+        if [ -e "$bakdir" ] && [ ! -e "$origdir" ]; then
             mv "$bakdir" "$origdir"
         fi
-        rm -rf  "$bakdir"
+        if [ -e "$bakdir" ]; then
+            chattr -R -i "$bakdir"
+            rm -rf "$bakdir"
+        fi
         mv "$rw/$subdir" "$bakdir"
         mkdir -p "$rw/$subdir"
 
         # Populate /home/user w skel files if it was in privdirs
         case "$subdir" in
             "home"|"home/"|"home/user"|"home/user/")
-                mkdir -p $rw/home/user
-                cp -aT /etc/skel $rw/home/user
-                chown -R user:user $rw/home/user
+                echo "Populating home dir"
+                #chown user:user $rw/home/user
+                rm -rf /home/user $rw/home/user
+                mkhomedir_helper user
+                mv /home/user $rw/home
                 ;;
         esac
     done
