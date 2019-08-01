@@ -46,7 +46,7 @@ privdirs_add=""
 
 
 # Placeholder function: Runs at end
-vm_boot_finish() { }
+vm_boot_finish() { return; }
 
 
 # Run rc file commands if they exist
@@ -211,10 +211,11 @@ if qsvc vm-boot-protect-root && is_rwonly_persistent; then
         case "$subdir" in
             "home"|"home/"|"home/user"|"home/user/")
                 echo "Populating home dir"
-                #chown user:user $rw/home/user
                 rm -rf /home/user $rw/home/user
+                mount --bind $rw/home /home
                 mkhomedir_helper user
-                mv /home/user $rw/home
+                #mv /home/user $rw/home
+                umount /home
                 ;;
         esac
     done
