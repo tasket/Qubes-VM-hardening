@@ -29,12 +29,12 @@ rw=/mnt/rwtmp
 rwbak=$rw/vm-boot-protect
 errlog=/var/run/vm-protect-error
 defdir=/etc/default/vms
-version="0.8.5"
+version="0.9.0b"
 
 # Define sh, bash, X and desktop init scripts in /home/user
 # to be protected
 chfiles=${chfiles:-".bashrc .bash_profile .bash_login .bash_logout .profile \
-.xprofile .xinitrc .xserverrc .xsession"}
+.pam_environment .xprofile .xinitrc .xserverrc .Xsession .xsession .xsessionrc"}
 chfiles_add=""
 chdirs=${chdirs:-"bin .local/bin .config/autostart .config/plasma-workspace/env \
 .config/plasma-workspace/shutdown .config/autostart-scripts .config/systemd"}
@@ -44,18 +44,13 @@ chdirs_add=""
 privdirs=${privdirs:-"/rw/config /rw/usrlocal /rw/bind-dirs"}
 privdirs_add=""
 
+# Get list of enabled tags from Qubes services
+tags=`find /var/run/qubes-service -name 'vm-boot-tag-*' -type f -printf '%f\n' \
+      | sort | sed -E 's|^vm-boot-tag-|\@tags/|'`
+
 
 # Placeholder function: Runs at end
 vm_boot_finish() { return; }
-
-
-# Run rc file commands if they exist
-if [ -e $defdir/vms.all.rc ]; then
-    . $defdir/vms.all.rc
-fi
-if [ -e $defdir/$vmname.rc ]; then
-    . $defdir/$vmname.rc
-fi
 
 
 # Remount fs as read-write
@@ -71,10 +66,11 @@ remount_rw() {
 
 # Function: Make user scripts immutable.
 make_immutable() {
+    echo "Making files IMMUTABLE"
     remount_rw
     #initialize_home $rw/home ifneeded
     cd $rw/home/user
-    su user -c "mkdir -p $chdirs $chdirs_add; touch $chfiles $chfiles_add"
+    su user -c "mkdir -p $chdirs $chdirs_add; touch $chfiles $chfiles_add 2>/dev/null"
     chattr -R -f +i $chfiles $chfiles_add $chdirs $chdirs_add
     cd /root
 }
@@ -114,6 +110,14 @@ abort_startup() {
 
     exit $rc
 }
+
+
+# Run rc file commands if they exist
+for rcbase in vms.all $tags $vmname; do
+    if [ -e "$defdir/$rcbase.rc" ]; then
+        . "$defdir/$rcbase.rc"
+    fi
+done
 
 
 echo >$errlog # Clear
@@ -159,21 +163,18 @@ if qsvc vm-boot-protect-root && is_rwonly_persistent; then
 
     # Check hashes
     checkcode=0
-    if [ -e $defdir/$vmname.SHA ]; then
-        # remove padding and add number field
-        sed 's/^ *//; s/ *$//; /^$/d; s/^/1 /' $defdir/$vmname.SHA \
-          >/tmp/vm-boot-protect-sha
-    fi
-    if [ -e $defdir/vms.all.SHA ]; then
-        sed 's/^ *//; s/ *$//; /^$/d; s/^/2 /' $defdir/vms.all.SHA \
-          >>/tmp/vm-boot-protect-sha
-    fi
+    for sha_base in $vmname $tags vms.all; do
+        if [ -e "$defdir/$sha_base.SHA" ]; then
+            cat "$defdir/$sha_base.SHA" >>/tmp/vm-boot-protect-sha
+        fi
+    done
     if [ -e /tmp/vm-boot-protect-sha ]; then
         echo "Checking file hashes." |tee $errlog
-        # Get unique paths, remove field and switch path to $rw before check;
+        # Strip padding, get unique paths and switch path to $rw before check;
         # this allows hashes in $vmname.SHA to override ones in vms.all.SHA.
-        sort --unique --key=3 /tmp/vm-boot-protect-sha  \
-        | sed -r 's|^[1-2] (.*[[:space:]]*)/rw|\1'$rw'|' \
+        sed 's/^ *//; s/ *$//; /^$/d;' /tmp/vm-boot-protect-sha \
+        | sort -u -k2,2 \
+        | sed -r 's|^(\S+\s+)/rw|\1'$rw'|' \
         | sha256sum --strict -c >>$errlog; checkcode=$?
     fi
 
@@ -220,7 +221,7 @@ if qsvc vm-boot-protect-root && is_rwonly_persistent; then
         esac
     done
 
-    for vmset in vms.all $vmname; do
+    for vmset in vms.all $tags $vmname; do
 
         # Process whitelists...
         cat $defdir/$vmset.whitelist \
@@ -263,6 +264,7 @@ fi
 rm -rf "$defdir"
 
 if qsvc vm-boot-protect || qsvc vm-boot-protect-root; then
+    echo "Preparing for unmount"
     vm_boot_finish
     make_immutable
     umount $rw
