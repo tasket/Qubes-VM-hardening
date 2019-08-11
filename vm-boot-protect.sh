@@ -28,6 +28,7 @@ dev=/dev/xvdb
 rw=/mnt/rwtmp
 rwbak=$rw/vm-boot-protect
 errlog=/var/run/vm-protect-error
+servicedir=/var/run/qubes-service
 defdir=/etc/default/vms
 version="0.9.0"
 
@@ -43,10 +44,6 @@ chdirs_add=${chdirs_add:-""}
 # Define dirs to apply quarrantine / whitelists
 privdirs=${privdirs:-"/rw/config /rw/usrlocal /rw/bind-dirs"}
 privdirs_add=""
-
-# Get list of enabled tags from Qubes services
-tags=`find /var/run/qubes-service -name 'vm-boot-tag-*' -type f -printf '%f\n' \
-      | sort | sed -E 's|^vm-boot-tag-|\@tags/|'`
 
 
 # Placeholder function: Runs at end
@@ -152,6 +149,10 @@ fi
 
 if qsvc vm-boot-protect-root && is_rwonly_persistent; then
 
+    # Get list of enabled tags from Qubes services
+    tags=`find $servicedir -name 'vm-boot-tag-*' -type f -printf '%f\n' \
+          | sort | sed -E 's|^vm-boot-tag-|\@tags/|'`
+
     # Run rc file commands if they exist
     for rcbase in vms.all $tags $vmname; do
         if [ -e "$defdir/$rcbase.rc" ]; then
@@ -222,36 +223,38 @@ if qsvc vm-boot-protect-root && is_rwonly_persistent; then
     for vmset in vms.all $tags $vmname; do
 
         # Process whitelists...
-        cat $defdir/$vmset.whitelist \
-        | while read wlfile; do
-            # Must begin with '/rw/'
-            if echo $wlfile |grep -q "^\/rw\/"; then
-                srcfile="`echo $wlfile |sed -r \"s|^/rw/(.+)$|$rwbak/BAK-\1|\"`"
-                dstfile="`echo $wlfile |sed -r \"s|^/rw/(.+)$|$rw/\1|\"`"
-                dstdir="`dirname \"$dstfile\"`"
-                if [ ! -e "$srcfile" ]; then
-                    echo "Whitelist entry not present in filesystem:"
-                    echo "$srcfile"
-                    continue
-                # For very large dirs: mv whole dir when entry ends with '/'
-                elif echo $wlfile |grep -q "\/$"; then
-                    echo "Whitelist mv $srcfile"
-                    echo "to $dstfile"
-                    mkdir -p "$dstdir"
-                    mv -T "$srcfile" "$dstfile"
-                else
-                    echo "Whitelist cp $srcfile"
-                    mkdir -p "$dstdir"
-                    cp -a --link "$srcfile" "$dstdir"
+        if [ -e $defdir/$vmset.whitelist ]; then
+            cat $defdir/$vmset.whitelist \
+            | while read wlfile; do
+                # Must begin with '/rw/'
+                if echo $wlfile |grep -q "^\/rw\/"; then
+                    srcfile="`echo $wlfile |sed -r \"s|^/rw/(.+)$|$rwbak/BAK-\1|\"`"
+                    dstfile="`echo $wlfile |sed -r \"s|^/rw/(.+)$|$rw/\1|\"`"
+                    dstdir="`dirname \"$dstfile\"`"
+                    if [ ! -e "$srcfile" ]; then
+                        echo "Whitelist entry not present in filesystem:"
+                        echo "$srcfile"
+                        continue
+                    # For very large dirs: mv whole dir when entry ends with '/'
+                    elif echo $wlfile |grep -q "\/$"; then
+                        # echo "Whitelist mv $srcfile"
+                        # echo "to $dstfile"
+                        mkdir -p "$dstdir"
+                        mv -T "$srcfile" "$dstfile"
+                    else
+                        # echo "Whitelist cp $srcfile"
+                        mkdir -p "$dstdir"
+                        cp -a --link "$srcfile" "$dstdir"
+                    fi
+                elif [ -n "$wlfile" ]; then
+                    echo "Whitelist path must begin with /rw/. Skipped."
                 fi
-            elif [ -n "$wlfile" ]; then
-                echo "Whitelist path must begin with /rw/. Skipped."
-            fi
-        done
+            done
+        fi
 
         # Copy default files...
         if [ -d $defdir/$vmset/rw ]; then
-            echo "Copy files from $defdir/$vmset/rw"
+            # echo "Copy files from $defdir/$vmset/rw"
             cp -af $defdir/$vmset/rw/* $rw
         fi
     done
@@ -260,13 +263,13 @@ if qsvc vm-boot-protect-root && is_rwonly_persistent; then
 
 fi
 
-# Keep configs invisible at runtime...
-rm -rf "$defdir"
-
 if qsvc vm-boot-protect || qsvc vm-boot-protect-root; then
     echo "Preparing for unmount"
     make_immutable
     umount $rw
 fi
+
+# Keep configs invisible at runtime...
+rm -rf "$defdir" $servicedir/vm-boot-tag* $servicedir/vm-boot-protect* $errlog
 
 exit 0
