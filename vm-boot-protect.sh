@@ -29,16 +29,16 @@ rw=/mnt/rwtmp
 rwbak=$rw/vm-boot-protect
 errlog=/var/run/vm-protect-error
 defdir=/etc/default/vms
-version="0.9.0b"
+version="0.9.0"
 
 # Define sh, bash, X and desktop init scripts in /home/user
 # to be protected
 chfiles=${chfiles:-".bashrc .bash_profile .bash_login .bash_logout .profile \
 .pam_environment .xprofile .xinitrc .xserverrc .Xsession .xsession .xsessionrc"}
-chfiles_add=""
+chfiles_add=${chfiles_add:-""}
 chdirs=${chdirs:-"bin .local/bin .config/autostart .config/plasma-workspace/env \
 .config/plasma-workspace/shutdown .config/autostart-scripts .config/systemd"}
-chdirs_add=""
+chdirs_add=${chdirs_add:-""}
 
 # Define dirs to apply quarrantine / whitelists
 privdirs=${privdirs:-"/rw/config /rw/usrlocal /rw/bind-dirs"}
@@ -112,14 +112,6 @@ abort_startup() {
 }
 
 
-# Run rc file commands if they exist
-for rcbase in vms.all $tags $vmname; do
-    if [ -e "$defdir/$rcbase.rc" ]; then
-        . "$defdir/$rcbase.rc"
-    fi
-done
-
-
 echo >$errlog # Clear
 
 if qsvc vm-boot-protect-cli; then
@@ -145,7 +137,6 @@ if qsvc vm-boot-protect || qsvc vm-boot-protect-root; then
 
     # Don't bother with root protections in template or standalone
     if ! is_rwonly_persistent; then
-        vm_boot_finish
         make_immutable
         exit 0
     fi
@@ -160,6 +151,13 @@ fi
 #   * Contents of vms/vms.all and vms/$vmname folders will be copied.
 
 if qsvc vm-boot-protect-root && is_rwonly_persistent; then
+
+    # Run rc file commands if they exist
+    for rcbase in vms.all $tags $vmname; do
+        if [ -e "$defdir/$rcbase.rc" ]; then
+            . "$defdir/$rcbase.rc"
+        fi
+    done
 
     # Check hashes
     checkcode=0
@@ -187,7 +185,8 @@ if qsvc vm-boot-protect-root && is_rwonly_persistent; then
 
     # Files mutable for del/copy operations
     cd $rw/home/user
-    chattr -R -f -i $chfiles $chfiles_add $chdirs $chdirs_add $privdirs $privdirs_add
+    chattr -R -f -i $chfiles $chfiles_add $chdirs $chdirs_add $privdirs $privdirs_add \
+                    $rwbak/BAK-*
     cd /root
 
 
@@ -202,7 +201,7 @@ if qsvc vm-boot-protect-root && is_rwonly_persistent; then
             mv "$bakdir" "$origdir"
         fi
         if [ -e "$bakdir" ]; then
-            chattr -R -i "$bakdir"
+            #chattr -R -i "$bakdir"
             rm -rf "$bakdir"
         fi
         mv "$rw/$subdir" "$bakdir"
@@ -215,7 +214,6 @@ if qsvc vm-boot-protect-root && is_rwonly_persistent; then
                 rm -rf /home/user $rw/home/user
                 mount --bind $rw/home /home
                 mkhomedir_helper user
-                #mv /home/user $rw/home
                 umount /home
                 ;;
         esac
@@ -258,6 +256,8 @@ if qsvc vm-boot-protect-root && is_rwonly_persistent; then
         fi
     done
 
+    vm_boot_finish
+
 fi
 
 # Keep configs invisible at runtime...
@@ -265,7 +265,6 @@ rm -rf "$defdir"
 
 if qsvc vm-boot-protect || qsvc vm-boot-protect-root; then
     echo "Preparing for unmount"
-    vm_boot_finish
     make_immutable
     umount $rw
 fi

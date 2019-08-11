@@ -57,6 +57,10 @@ Leverage Qubes template non-persistence to fend off malware at VM startup: Lock-
    **Deployment** files are copied _recursively_ from ../vms/vms.all/rw/ and ../vms/$vmname/rw/ dirs. Example is to place the .bashrc file in /etc/default/vms/vms.all/rw/home/user/.bashrc for deployment to /rw/home/user/.bashrc. Once copying is complete,
 the /etc/defaults/vms folder is deleted from the running VM (this has no effect on the original in the template).
 
+   **rc files** are sh script fragments sourced from ../vms/vms.all.rc and ../vms/$vmname.rc. They run near the beginning of the vm-boot-protect service before mounting /rw, and can be used to override variable definitions like `privdirs` as well as the `vm_boot_finish` function which runs near the end before dismount. Another use for rc files is to run threat detection tools such as antivirus.
+
+   **Tags** may be defined with all of the above features so that you are not limited to specifying them for either all VMs or specifically-named VMs. Simply configure them as you would acccording to the above directions, but place the files under the '@tags' subdir instead. For example '/etc/default/vms/@tags/special.whitelist' defines a whitelist for the tag 'special'. A tag can be activated for one or more VMs by adding a Qubes service prefixed with `vm-boot-tag-` (i.e. vm-boot-tag-special) to the VMs.
+
 ### Where to use: Basic examples
 
 After installing into a template, simply enable `vm-boot-protect-root` service without configuration. Recommended for the following types of VMs:
@@ -82,6 +86,8 @@ Examples where -root should *not* be enabled:
 
 ### Notes
 
+   * The /rw/home directory can be added to `privdirs` so it is quarrantined much like /rw/config, /rw/binddirs and /rw/usrlocal. The easiest way to configure this is to define `privdirs_add=/rw/home` in an rc file or a drop-in for the vm-boot-protect.service. But in the case of /rw/home, the /rw/home/user folder will be repopulated automatically from OS defaults (usually in /etc/skel) before whitelists are applied. For an example, see the `ibrowse` tag which quarrantines home while whitelisting Firefox bookmarks.
+
    * A bug in v0.8.4 will erase anything in '/etc/default/vms' when booting into the template. For proper
    future operation with sys-net or other VMs you may have customized in that path, updating Qubes-VM-hardening
    to the latest version (using the install script) is recommended, along with restoring any custom files
@@ -98,6 +104,7 @@ Examples where -root should *not* be enabled:
    * Currently the service cannot seamlessly handle 'first boot' when the private volume must be initialized. If you enabled the service on a VM before its first startup, on first start the shell will display a notice telling you to restart the VM. Subsequent starts will proceed normally.
    
 ## Releases
+   - v0.9.0  Add tags and rc files, protect more home scripts, support home quarrantine
    - v0.8.5  Fix template detection, /etc/default/vms erasure
    - v0.8.4  Add protection to /home/user/.config/systemd
    - v0.8.3  Fix for install script copying to /etc/default/vms

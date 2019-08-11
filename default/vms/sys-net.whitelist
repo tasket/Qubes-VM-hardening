@@ -1,2 +1,1 @@
-/rw/config/NM-system-connections/
-/rw/config/suspend-module-blacklist
+@tags/network.whitelist
