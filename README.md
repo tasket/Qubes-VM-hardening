@@ -7,7 +7,8 @@ Leverage Qubes template non-persistence to fend off malware at VM startup: Lock-
    * Acts at VM startup before private volume /rw mounts
    * User: Protect /home desktop & shell startup executables
    * Root: Quarantine all /rw configs & scripts, with whitelisting
-   * Re-deploy custom or default files to /rw on each boot
+   * Organize configurations with named tags
+   * Deploy trusted custom files to /rw on each boot
    * SHA256 hash checking against unwanted changes
    * Provides rescue shell on error or request
    * Works with template-based AppVMs, sys-net and sys-vpn
@@ -32,7 +33,7 @@ Leverage Qubes template non-persistence to fend off malware at VM startup: Lock-
    For Debian-based templates the installer will launch `configure-sudo-prompt` automatically to enable a sudo [yes/no prompt](https://www.qubes-os.org/doc/vm-sudo/#replacing-password-less-root-access-with-dom0-user-prompt) that appears in dom0. This handles the template configuration then displays several commands to manually configure dom0 (the dom0 step is required only once, regardless of how many templates you configure). You may test the `configure-sudo-prompt` script in a regular template-based appVM to see if it works, although the effect will be temporary.
 
    Alternately, you can uninstall the `qubes-core-agent-passwordless-root` package from the template. After doing this, you will have to use `qvm-run -u root` from dom0 to run any VM commands as root.
-   
+
 ---
 
 ### Usage
@@ -48,7 +49,7 @@ Leverage Qubes template non-persistence to fend off malware at VM startup: Lock-
 
 ### Configuration
 
-   Files can be added to /etc/default/vms in the template to enable the following features...
+   Files can be added to /etc/default/vms in the template to configure the following `vm-boot-protect-root` features...
 
    **Hashes/Checksums** are checked in ../vms/vms.all.SHA and ../vms/$vmname.SHA files. File paths contained in them must be absolute, and references to '/home' must be prefixed with '/rw/'. Hashes in $vmname.SHA will override hashes specified for the same paths in vms.all.SHA. See also man page for `sha256sum -c`.
 
@@ -59,7 +60,7 @@ the /etc/defaults/vms folder is deleted from the running VM (this has no effect 
 
    **rc files** are sh script fragments sourced from ../vms/vms.all.rc and ../vms/$vmname.rc. They run near the beginning of the vm-boot-protect service before mounting /rw, and can be used to override variable definitions like `privdirs` as well as the `vm_boot_finish` function which runs near the end before dismount. Another use for rc files is to run threat detection tools such as antivirus.
 
-   **Tags** may be defined with all of the above features so that you are not limited to specifying them for either all VMs or specifically-named VMs. Simply configure them as you would acccording to the above directions, but place the files under the '@tags' subdir instead. For example '/etc/default/vms/@tags/special.whitelist' defines a whitelist for the tag 'special'. A tag can be activated for one or more VMs by adding a Qubes service prefixed with `vm-boot-tag-` (i.e. vm-boot-tag-special) to the VMs.
+   **Tags** may be defined with all of the above features so that you are not limited to specifying them for either all VMs or specifically-named VMs. Simply configure them as you would acccording to the above directions, but place the files under the '@tags' subdir instead. For example '/etc/default/vms/@tags/special.whitelist' defines a whitelist for the tag 'special'. A tag can be activated for one or more VMs by adding a Qubes service prefixed with `vm-boot-tag-` (i.e. vm-boot-tag-special) to the VMs. Also, multiple tags may be activated for a VM.
 
 ### Where to use: Basic examples
 
@@ -75,18 +76,26 @@ Examples where -root should *not* be enabled:
   * Standalone VMs. Plain `vm-boot-protect` makes more sense for these.
   * Non-Linux VMs (currently unsupported for any mode)
 
+### Example configs
+
+Some usefull configurations have been supplied in /etc/default/vms:
+
+  * vm-boot-tag-network: Contains a whitelist for Network Manager connections and the module blacklist which is often used with network interfaces in Qubes. By default, this config also activates for any VM named 'sys-net'.
+  * vm-boot-tag-qhome: Quarrantines /home in addition to the /rw system dirs. Useful for 'sys-usb' and DispVM-like functionality.
+  * vm-boot-tag-ibrowse: Preserves Firefox bookmarks while quarantining the rest of /home folder. (To preserve pre-existing bookmarks, existing Firefox profile folder must be renamed to "profile.default" before activating this tag.)
+
 
 ### Scope and Limitations
 
    The *vm-boot-protect* concept enhances the guest operating system's own defenses by using the *root volume non-persistence* provided by the Qubes template system; thus a relatively pristine startup state may be achieved if the *private* volume is brought online in a controlled manner. Protecting the init/autostart files should result in Qubes template-based VMs that boot 'cleanly' with much less chance of being affected by malware initially. Even if malware persists in a VM, it should be possible to run other apps and terminals without interference if the malware has not escalated to root (admittedly, a big 'if').
 
    Conversely, attacks which damage/exploit the Ext4 private filesystem itself or quickly re-exploit network vulnerabilities could conceivably still persist at startup. Further, repeated running of some apps such as Firefox, Chrome, LibreOffice, PDF viewers, online games, etc. may reactivate malware; this is not only because of the complexity of the formats handled by such apps, but also because of settings contained in javascript or which specify commands to be executed by the app. Therefore, setting apps to autostart can diminish protection of the startup environment.
-   
+
    Note that as vulnerabilities are patched via system updates, malware that used those vulns to gain entry may cease to function without the kind of loopholes that *vm-boot-protect* closes.
 
 ### Notes
 
-   * The /rw/home directory can be added to `privdirs` so it is quarrantined much like /rw/config, /rw/binddirs and /rw/usrlocal. The easiest way to configure this is to define `privdirs_add=/rw/home` in an rc file or a drop-in for the vm-boot-protect.service. But in the case of /rw/home, the /rw/home/user folder will be repopulated automatically from OS defaults (usually in /etc/skel) before whitelists are applied. For an example, see the `ibrowse` tag which quarrantines home while whitelisting Firefox bookmarks.
+   * The /rw/home directory can be added to `privdirs` so it is quarrantined much like the other /rw dirs. The easiest way to configure this is to define `privdirs_add=/rw/home` in an rc file; see 'qhome.rc' for an exmaple.
 
    * A bug in v0.8.4 will erase anything in '/etc/default/vms' when booting into the template. For proper
    future operation with sys-net or other VMs you may have customized in that path, updating Qubes-VM-hardening
@@ -95,8 +104,6 @@ Examples where -root should *not* be enabled:
 
    * All the user-writable startup files in /home should be protected by the immutable flag; See issue #9 if you notice an omission or other problem. An extra step of disabling the flag using `sudo chattr -i` is required whenever the user wants to modify these startup files.
 
-   * Adding /home or subdirs of it to $privdirs is possible. This would quarantine everything there to set the stage for applying whitelists on /home contents. The $privdirs variable can be changed via the service file, for example adding a .conf file in /lib/systemd/system/vm-boot-protect.d.
-
    * The sys-net VM should work 'out of the box' with the vm-boot-protect-root service via the included whitelist file. Additional network VMs may require configuration, such as `cp sys-net.whitelist sys-net2.whitelist`.
    
    * Using the -root service with a [VPN VM](https://github.com/tasket/Qubes-vpn-support) requires manual configuration in the template and can be approached different ways: Whitelist (optionally with SHA) can be made for the appropriate files. Alternately, all VPN configs can be added under /etc/default/vms/vmname/rw so they'll be automatically deployed.
@@ -104,7 +111,7 @@ Examples where -root should *not* be enabled:
    * Currently the service cannot seamlessly handle 'first boot' when the private volume must be initialized. If you enabled the service on a VM before its first startup, on first start the shell will display a notice telling you to restart the VM. Subsequent starts will proceed normally.
    
 ## Releases
-   - v0.9.0  Add tags and rc files, protect more home scripts, support home quarrantine
+   - v0.9.0  Add tags and rc files, protect more home scripts, reinitialize home
    - v0.8.5  Fix template detection, /etc/default/vms erasure
    - v0.8.4  Add protection to /home/user/.config/systemd
    - v0.8.3  Fix for install script copying to /etc/default/vms

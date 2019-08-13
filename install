@@ -1,12 +1,24 @@
 #!/bin/bash
 # From https://github.com/tasket/Qubes-VM-hardening
-# installer version 0.8.4
+# installer version 0.9.0
 
 set -e
 [ `id -u` -eq 0 ] || exit
 
-echo "Disabling the pre-release service (if present)..."
-systemctl disable vm-sudo-protect.service || true
+if [ "$1" = "--uninstall" ]; then
+    echo "Removing vm-boot-protect.service..."
+    echo "Warning: This will remove any custom files added to /etc/default/vms!"
+    read -p "Proceed [y/N]? " ans
+    if [[ $ans == @(Y|y) ]]; then
+        systemctl disable vm-boot-protect.service
+        rm -r /lib/systemd/system/vm-boot-protect.service /usr/lib/qubes/init/vm-boot-protect.sh /etc/default/vms
+        systemctl daemon-reload
+        echo "Done."
+    else
+        echo "Aborted."
+    fi
+fi
+
 
 echo "Installing vm-boot-protect.service..."
 cp vm-boot-protect.sh /usr/lib/qubes/init
@@ -19,6 +31,30 @@ echo "Adding defaults in /etc/default/vms..."
 mkdir -p /etc/default/vms
 # Careful... ownership & mode are not preserved here!
 cp -riv default/vms/* /etc/default/vms
+
+
+# echo
+# echo "Setup empty Firefox default profile in /etc/skel..."
+# echo "A fixed-name profile will be defined in the /home/user folder"
+# echo "whenever home is reset/initialized. This is required when"
+# echo "using vm-boot-protect features (such as ibrowse) to"
+# echo "whitelist parts of the browser configuration."
+# echo
+# read -p "Add Firefox default profile [y/N]? " ans
+# if [[ $ans == @(Y|y) ]]; then
+#     mkdir -p /etc/skel/.mozilla/firefox/profile.default
+#     cat <<__END1__ >/etc/skel/.mozilla/firefox/profiles.ini
+# [General]
+# StartWithLastProfile=1
+# 
+# [Profile0]
+# Name=default
+# IsRelative=1
+# Path=profile.default
+# Default=1
+# __END1__
+# 
+# fi
 
 echo -e "\nvm-boot-protect installed!\n"
 

@@ -30,7 +30,8 @@ rwbak=$rw/vm-boot-protect
 errlog=/var/run/vm-protect-error
 servicedir=/var/run/qubes-service
 defdir=/etc/default/vms
-version="0.9.0"
+save_backup=${save_backup:-1}
+version="0.9.0b"
 
 # Define sh, bash, X and desktop init scripts in /home/user
 # to be protected
@@ -271,5 +272,11 @@ fi
 
 # Keep configs invisible at runtime...
 rm -rf "$defdir" $servicedir/vm-boot-tag* $servicedir/vm-boot-protect* $errlog
+
+# Remove backups if indicated
+if [ $save_backup = 0 ]; then
+    chattr -R -f -i $rwbak
+    rm -rf $rwbak
+fi
 
 exit 0
