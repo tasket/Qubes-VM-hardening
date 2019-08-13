@@ -17,6 +17,7 @@ if [ "$1" = "--uninstall" ]; then
     else
         echo "Aborted."
     fi
+    exit 0
 fi
 
 
@@ -32,29 +33,6 @@ mkdir -p /etc/default/vms
 # Careful... ownership & mode are not preserved here!
 cp -riv default/vms/* /etc/default/vms
 
-
-# echo
-# echo "Setup empty Firefox default profile in /etc/skel..."
-# echo "A fixed-name profile will be defined in the /home/user folder"
-# echo "whenever home is reset/initialized. This is required when"
-# echo "using vm-boot-protect features (such as ibrowse) to"
-# echo "whitelist parts of the browser configuration."
-# echo
-# read -p "Add Firefox default profile [y/N]? " ans
-# if [[ $ans == @(Y|y) ]]; then
-#     mkdir -p /etc/skel/.mozilla/firefox/profile.default
-#     cat <<__END1__ >/etc/skel/.mozilla/firefox/profiles.ini
-# [General]
-# StartWithLastProfile=1
-# 
-# [Profile0]
-# Name=default
-# IsRelative=1
-# Path=profile.default
-# Default=1
-# __END1__
-# 
-# fi
 
 echo -e "\nvm-boot-protect installed!\n"
 

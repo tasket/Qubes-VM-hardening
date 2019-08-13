@@ -19,7 +19,7 @@ Leverage Qubes template non-persistence to fend off malware at VM startup: Lock-
 1. In a template VM, install the service files
    ```
    cd Qubes-VM-hardening
-   sudo sh ./install
+   sudo bash install
    ```
 
 2. Activate by specifying one of the following Qubes services for your VM(s)...
@@ -110,7 +110,9 @@ Some useful configurations have been supplied in /etc/default/vms:
    * Using the -root service with a [VPN VM](https://github.com/tasket/Qubes-vpn-support) requires manual configuration in the template and can be approached different ways: Whitelist (optionally with SHA) can be made for the appropriate files. Alternately, all VPN configs can be added under /etc/default/vms/vmname/rw so they'll be automatically deployed.
 
    * Currently the service cannot seamlessly handle 'first boot' when the private volume must be initialized. If you enabled the service on a VM before its first startup, on first start the shell will display a notice telling you to restart the VM. Subsequent starts will proceed normally.
-   
+
+   * The service can be removed from the system with `cd Qubes-VM-hardening; sudo bash install --uninstall`
+
 ## Releases
    - v0.9.0  Add tags and rc files, protect more home scripts, reinitialize home
    - v0.8.5  Fix template detection, /etc/default/vms erasure
