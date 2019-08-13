@@ -30,7 +30,6 @@ rwbak=$rw/vm-boot-protect
 errlog=/var/run/vm-protect-error
 servicedir=/var/run/qubes-service
 defdir=/etc/default/vms
-save_backup=${save_backup:-1}
 version="0.9.0b"
 
 # Define sh, bash, X and desktop init scripts in /home/user
@@ -44,7 +43,8 @@ chdirs_add=${chdirs_add:-""}
 
 # Define dirs to apply quarrantine / whitelists
 privdirs=${privdirs:-"/rw/config /rw/usrlocal /rw/bind-dirs"}
-privdirs_add=""
+privdirs_add=${privdirs_add:-""}
+save_backup=${save_backup:-1}
 
 
 # Placeholder function: Runs at end
@@ -264,12 +264,6 @@ if qsvc vm-boot-protect-root && is_rwonly_persistent; then
 
 fi
 
-if qsvc vm-boot-protect || qsvc vm-boot-protect-root; then
-    echo "Preparing for unmount"
-    make_immutable
-    umount $rw
-fi
-
 # Keep configs invisible at runtime...
 rm -rf "$defdir" $servicedir/vm-boot-tag* $servicedir/vm-boot-protect* $errlog
 
@@ -277,6 +271,12 @@ rm -rf "$defdir" $servicedir/vm-boot-tag* $servicedir/vm-boot-protect* $errlog
 if [ $save_backup = 0 ]; then
     chattr -R -f -i $rwbak
     rm -rf $rwbak
+fi
+
+if qsvc vm-boot-protect || qsvc vm-boot-protect-root; then
+    echo "Preparing for unmount"
+    make_immutable
+    umount $rw
 fi
 
 exit 0
