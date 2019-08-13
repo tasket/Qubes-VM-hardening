@@ -1,1 +1,2 @@
+# Quarantine entire /home directory
 privdirs_add="/rw/home"

@@ -1,0 +1,2 @@
+# Removes any files that were quarantined under /rw/vm-boot-protect/
+save_backup=0

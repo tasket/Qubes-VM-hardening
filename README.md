@@ -78,10 +78,11 @@ Examples where -root should *not* be enabled:
 
 ### Example configs
 
-Some usefull configurations have been supplied in /etc/default/vms:
+Some useful configurations have been supplied in /etc/default/vms:
 
   * vm-boot-tag-network: Contains a whitelist for Network Manager connections and the module blacklist which is often used with network interfaces in Qubes. By default, this config also activates for any VM named 'sys-net'.
-  * vm-boot-tag-qhome: Quarrantines /home in addition to the /rw system dirs. Useful for 'sys-usb' and DispVM-like functionality.
+  * vm-boot-tag-qhome: Quarantines /home in addition to the /rw system dirs. Useful for 'sys-usb' and DispVM-like functionality.
+  * vm-boot-tag-noqbackup: Deletes all quarantined files that are not whitelisted.
   * vm-boot-tag-ibrowse: Preserves Firefox bookmarks while quarantining the rest of /home folder. (To preserve pre-existing bookmarks, existing Firefox profile folder must be renamed to "profile.default" before activating this tag.)
 
 
@@ -95,7 +96,7 @@ Some usefull configurations have been supplied in /etc/default/vms:
 
 ### Notes
 
-   * The /rw/home directory can be added to `privdirs` so it is quarrantined much like the other /rw dirs. The easiest way to configure this is to define `privdirs_add=/rw/home` in an rc file; see 'qhome.rc' for an exmaple.
+   * The /rw/home directory can be added to `privdirs` so it is quarantined much like the other /rw dirs. The easiest way to configure this is to define `privdirs_add=/rw/home` in an rc file; see 'qhome.rc' for an exmaple.
 
    * A bug in v0.8.4 will erase anything in '/etc/default/vms' when booting into the template. For proper
    future operation with sys-net or other VMs you may have customized in that path, updating Qubes-VM-hardening
@@ -118,5 +119,3 @@ Some usefull configurations have been supplied in /etc/default/vms:
    - v0.8.2  Working rescue shell. Add sys-net whitelist, sudo config, fixes.
    - v0.8.0  Adds protection to /rw, file SHA checksums, whitelists, deployment
    - v0.2.0  Protects /home/user files and dirs
-
-

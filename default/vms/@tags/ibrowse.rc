@@ -1,1 +1,2 @@
+# Browser-focused config that saves only bookmarks, starts with /home quarantine
 privdirs_add="/rw/home"

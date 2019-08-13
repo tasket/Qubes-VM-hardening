@@ -41,7 +41,7 @@ chdirs=${chdirs:-"bin .local/bin .config/autostart .config/plasma-workspace/env 
 .config/plasma-workspace/shutdown .config/autostart-scripts .config/systemd"}
 chdirs_add=${chdirs_add:-""}
 
-# Define dirs to apply quarrantine / whitelists
+# Define dirs to apply quarantine / whitelists
 privdirs=${privdirs:-"/rw/config /rw/usrlocal /rw/bind-dirs"}
 privdirs_add=${privdirs_add:-""}
 save_backup=${save_backup:-1}
