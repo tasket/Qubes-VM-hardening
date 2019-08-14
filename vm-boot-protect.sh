@@ -133,12 +133,15 @@ if qsvc vm-boot-protect || qsvc vm-boot-protect-root; then
         fi
     fi
 
-    # Don't bother with root protections in template or standalone
+    # Begin exit if in template or standalone
     if ! is_rwonly_persistent; then
         make_immutable
-        exit 0
     fi
 
+fi
+# Exit if in template or standalone
+if ! is_rwonly_persistent; then
+    exit 0
 fi
 
 
