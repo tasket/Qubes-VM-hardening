@@ -136,6 +136,7 @@ if qsvc vm-boot-protect || qsvc vm-boot-protect-root; then
     # Begin exit if in template or standalone
     if ! is_rwonly_persistent; then
         make_immutable
+        umount $rw
     fi
 
 fi
@@ -268,7 +269,9 @@ if qsvc vm-boot-protect-root && is_rwonly_persistent; then
 fi
 
 # Keep configs invisible at runtime...
-rm -rf "$defdir" $servicedir/vm-boot-tag* $servicedir/vm-boot-protect* $errlog
+if ! is_templatevm; then
+    rm -rf "$defdir" $servicedir/vm-boot-tag* $servicedir/vm-boot-protect* $errlog
+fi
 
 # Remove backups if indicated
 if [ $save_backup = 0 ]; then
