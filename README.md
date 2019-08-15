@@ -76,14 +76,14 @@ Examples where -root should *not* be enabled:
   * Standalone VMs. Plain `vm-boot-protect` makes more sense for these.
   * Non-Linux VMs (currently unsupported for any mode)
 
-### Example configs
+### Example tags
 
 Some useful configurations have been supplied in /etc/default/vms:
 
   * vm-boot-tag-network: Contains a whitelist for Network Manager connections and the module blacklist which is often used with network interfaces in Qubes. By default, this config also activates for any VM named 'sys-net'.
   * vm-boot-tag-qhome: Quarantines /home in addition to the /rw system dirs. Useful for 'sys-usb' and DispVM-like functionality.
   * vm-boot-tag-noqbackup: Deletes all quarantined files that are not whitelisted.
-  * vm-boot-tag-ibrowse: Preserves Firefox bookmarks while quarantining the rest of /home folder. (To preserve pre-existing bookmarks, existing Firefox profile folder must be renamed to "profile.default" before activating this tag.)
+  * vm-boot-tag-ibrowse: Preserves Firefox bookmarks while quarantining the /home folder. [Currently](https://github.com/tasket/Qubes-VM-hardening/issues/39) works with Firefox ESR.
 
 
 ### Scope and Limitations

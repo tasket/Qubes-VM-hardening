@@ -30,7 +30,7 @@ rwbak=$rw/vm-boot-protect
 errlog=/var/run/vm-protect-error
 servicedir=/var/run/qubes-service
 defdir=/etc/default/vms
-version="0.9.0b"
+version="0.9.0"
 
 # Define sh, bash, X and desktop init scripts in /home/user
 # to be protected
