@@ -60,7 +60,7 @@ the /etc/defaults/vms folder is deleted from the running VM (this has no effect 
 
    **rc files** are sh script fragments sourced from ../vms/vms.all.rc and ../vms/$vmname.rc. They run near the beginning of the vm-boot-protect service before mounting /rw, and can be used to override variable definitions like `privdirs` as well as the `vm_boot_finish` function which runs near the end before dismount. Another use for rc files is to run threat detection tools such as antivirus.
 
-   **Tags** may be defined with all of the above features so that you are not limited to specifying them for either all VMs or specifically-named VMs. Simply configure them as you would acccording to the above directions, but place the files under the '@tags' subdir instead. For example '/etc/default/vms/@tags/special.whitelist' defines a whitelist for the tag 'special'. A tag can be activated for one or more VMs by adding a Qubes service prefixed with `vm-boot-tag-` (i.e. vm-boot-tag-special) to the VMs. Also, multiple tags may be activated for a VM.
+   **Tags:** Any of the above configs may be defined as tags so that you are not limited to specifying them for either all VMs or specifically-named VMs. Simply configure them as you would acccording to the above directions, but place the files under the '@tags' subdir instead. For example '/etc/default/vms/@tags/special.whitelist' defines a whitelist for the tag 'special'. A tag can be activated for one or more VMs by adding a Qubes service prefixed with `vm-boot-tag-` (i.e. vm-boot-tag-special) to the VMs. Also, multiple tags may be activated for a VM.
 
 ### Where to use: Basic examples
 
@@ -83,20 +83,24 @@ Some useful configurations have been supplied in /etc/default/vms:
   * vm-boot-tag-network: Contains a whitelist for Network Manager connections and the module blacklist which is often used with network interfaces in Qubes. By default, this config also activates for any VM named 'sys-net'.
   * vm-boot-tag-qhome: Quarantines /home in addition to the /rw system dirs. Useful for 'sys-usb' and DispVM-like functionality.
   * vm-boot-tag-noqbackup: Deletes all quarantined files that are not whitelisted.
-  * vm-boot-tag-ibrowse: Preserves Firefox bookmarks while quarantining the /home folder. [Currently](https://github.com/tasket/Qubes-VM-hardening/issues/39) works with Firefox ESR.
+  * vm-boot-tag-ibrowse: Preserves Firefox bookmarks while quarantining the /home folder. [Currently](https://github.com/tasket/Qubes-VM-hardening/issues/39) works with Firefox ESR. See Notes below.
 
 
 ### Scope and Limitations
 
    The *vm-boot-protect* concept enhances the guest operating system's own defenses by using the *root volume non-persistence* provided by the Qubes template system; thus a relatively pristine startup state may be achieved if the *private* volume is brought online in a controlled manner. Protecting the init/autostart files should result in Qubes template-based VMs that boot 'cleanly' with much less chance of being affected by malware initially. Even if malware persists in a VM, it should be possible to run other apps and terminals without interference if the malware has not escalated to root (admittedly, a big 'if').
 
-   Conversely, attacks which damage/exploit the Ext4 private filesystem itself or quickly re-exploit network vulnerabilities could conceivably still persist at startup. Further, repeated running of some apps such as Firefox, Chrome, LibreOffice, PDF viewers, online games, etc. may reactivate malware; this is not only because of the complexity of the formats handled by such apps, but also because of settings contained in javascript or which specify commands to be executed by the app. Therefore, setting apps to autostart can diminish protection of the startup environment.
+   Conversely, attacks which damage/exploit the Ext4 private filesystem itself or quickly re-exploit network vulnerabilities could conceivably still persist at startup. Further, repeated running of complex apps, games, and programming environments may reactivate malware; this is because of the complexity of the formats and settings handled by such apps. Therefore, setting apps to autostart can diminish protection of the startup environment.
 
-   Note that as vulnerabilities are patched via system updates, malware that used those vulns to gain entry may cease to function without the kind of loopholes that *vm-boot-protect* closes.
+   Note that as system and app vulnerabilities are patched via system updates, malware that used those vulns to gain entry may cease to function without the kind of loopholes that *vm-boot-protect* closes.
+
+   Efficient template re-use is another aspect of using *vm-boot-protect-root* features, since a single template can be customized for various roles. However, note that some customizations may not be appropriate to run during VM startup.
 
 ### Notes
 
    * The /rw/home directory can be added to `privdirs` so it is quarantined much like the other /rw dirs. The easiest way to configure this is to define `privdirs_add=/rw/home` in an rc file; see 'qhome.rc' for an exmaple.
+
+   * The ibrowse tag works with Firefox versions up to 66 and uses a generic profile named 'profile.default'. If you wish to carry over existing bookmarks for use with ibrowse, rename the current profile folder in '.mozilla/firefox' to 'profile.default' before enabling the ibrowse tag.
 
    * A bug in v0.8.4 will erase anything in '/etc/default/vms' when booting into the template. For proper
    future operation with sys-net or other VMs you may have customized in that path, updating Qubes-VM-hardening
