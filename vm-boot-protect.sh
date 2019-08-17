@@ -46,6 +46,12 @@ privdirs=${privdirs:-"/rw/config /rw/usrlocal /rw/bind-dirs"}
 privdirs_add=${privdirs_add:-""}
 save_backup=${save_backup:-1}
 
+if is_rwonly_persistent; then
+    rwonly_pers=1
+else
+    rwonly_pers=0
+fi
+
 
 # Placeholder function: Runs at end
 vm_boot_finish() { return; }
@@ -117,7 +123,7 @@ fi
 
 
 # Run rc file commands if they exist
-if qsvc vm-boot-protect-root && is_rwonly_persistent; then
+if qsvc vm-boot-protect-root && [ $rwonly_pers = 1 ]; then
     # Get list of enabled tags from Qubes services
     tags=`find $servicedir -name 'vm-boot-tag-*' -type f -printf '%f\n' \
           | sort | sed -E 's|^vm-boot-tag-|\@tags/|'`
@@ -148,14 +154,14 @@ if qsvc vm-boot-protect || qsvc vm-boot-protect-root; then
     fi
 
     # Begin exit if in template or standalone
-    if ! is_rwonly_persistent; then
+    if [ $rwonly_pers = 0 ]; then
         make_immutable
         umount $rw
     fi
 
 fi
 # Exit if in template or standalone
-if ! is_rwonly_persistent; then
+if [ $rwonly_pers = 0 ]; then
     exit 0
 fi
 
@@ -166,7 +172,7 @@ fi
 #   * Remove /rw root startup files (config, usrlocal, bind-dirs).
 #   * Contents of vms/vms.all and vms/$vmname folders will be copied.
 
-if qsvc vm-boot-protect-root && is_rwonly_persistent; then
+if qsvc vm-boot-protect-root && [ $rwonly_pers = 1 ]; then
 
     # Check hashes
     checkcode=0

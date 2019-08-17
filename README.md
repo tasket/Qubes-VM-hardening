@@ -84,8 +84,9 @@ Some useful configurations have been supplied in /etc/default/vms:
   * vm-boot-tag-qhome: Quarantines /home in addition to the /rw system dirs. Useful for 'sys-usb' and DispVM-like functionality.
   * vm-boot-tag-noqbackup: Deletes all quarantined files that are not whitelisted.
   * vm-boot-tag-ibrowse: Preserves Firefox bookmarks while quarantining the /home folder. [Currently](https://github.com/tasket/Qubes-VM-hardening/issues/39) works with Firefox ESR. See Notes below.
+  * vm-boot-wiperw: Completely wipe and reformat the /rw partition.
 
-
+  
 ### Scope and Limitations
 
    The *vm-boot-protect* concept enhances the guest operating system's own defenses by using the *root volume non-persistence* provided by the Qubes template system; thus a relatively pristine startup state may be achieved if the *private* volume is brought online in a controlled manner. Protecting the init/autostart files should result in Qubes template-based VMs that boot 'cleanly' with much less chance of being affected by malware initially. Even if malware persists in a VM, it should be possible to run other apps and terminals without interference if the malware has not escalated to root (admittedly, a big 'if').
@@ -118,6 +119,7 @@ Some useful configurations have been supplied in /etc/default/vms:
    * The service can be removed from the system with `cd Qubes-VM-hardening; sudo bash install --uninstall`
 
 ## Releases
+   - v0.9.1  Optimized, fix rc order, new "wiperw" tag
    - v0.9.0  Add tags and rc files, protect more home scripts, reinitialize home
    - v0.8.5  Fix template detection, /etc/default/vms erasure
    - v0.8.4  Add protection to /home/user/.config/systemd

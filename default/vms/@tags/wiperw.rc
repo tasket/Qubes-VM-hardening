@@ -1,0 +1,4 @@
+# Completely wipes private volume contents
+
+blkdiscard $dev
+mkfs.ext4 $dev
