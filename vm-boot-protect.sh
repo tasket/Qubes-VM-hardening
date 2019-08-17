@@ -30,7 +30,7 @@ rwbak=$rw/vm-boot-protect
 errlog=/var/run/vm-protect-error
 servicedir=/var/run/qubes-service
 defdir=/etc/default/vms
-version="0.9.0"
+version="0.9.1"
 
 # Define sh, bash, X and desktop init scripts in /home/user
 # to be protected
@@ -111,10 +111,24 @@ abort_startup() {
 
 
 echo >$errlog # Clear
-
 if qsvc vm-boot-protect-cli; then
     abort_startup RELOCATE "CLI requested."
 fi
+
+
+# Run rc file commands if they exist
+if qsvc vm-boot-protect-root && is_rwonly_persistent; then
+    # Get list of enabled tags from Qubes services
+    tags=`find $servicedir -name 'vm-boot-tag-*' -type f -printf '%f\n' \
+          | sort | sed -E 's|^vm-boot-tag-|\@tags/|'`
+
+    for rcbase in vms.all $tags $vmname; do
+        if [ -e "$defdir/$rcbase.rc" ]; then
+            . "$defdir/$rcbase.rc"
+        fi
+    done
+fi
+
 
 if qsvc vm-boot-protect || qsvc vm-boot-protect-root; then
     # Mount private volume in temp location
@@ -153,17 +167,6 @@ fi
 #   * Contents of vms/vms.all and vms/$vmname folders will be copied.
 
 if qsvc vm-boot-protect-root && is_rwonly_persistent; then
-
-    # Get list of enabled tags from Qubes services
-    tags=`find $servicedir -name 'vm-boot-tag-*' -type f -printf '%f\n' \
-          | sort | sed -E 's|^vm-boot-tag-|\@tags/|'`
-
-    # Run rc file commands if they exist
-    for rcbase in vms.all $tags $vmname; do
-        if [ -e "$defdir/$rcbase.rc" ]; then
-            . "$defdir/$rcbase.rc"
-        fi
-    done
 
     # Check hashes
     checkcode=0
