@@ -30,7 +30,7 @@ rwbak=$rw/vm-boot-protect
 errlog=/var/run/vm-protect-error
 servicedir=/var/run/qubes-service
 defdir=/etc/default/vms
-version="0.9.1"
+version=0.9.2
 
 # Define sh, bash, X and desktop init scripts in /home/user
 # to be protected
@@ -277,11 +277,6 @@ if qsvc vm-boot-protect-root && [ $rwonly_pers = 1 ]; then
 
 fi
 
-# Keep configs invisible at runtime...
-if ! is_templatevm; then
-    rm -rf "$defdir" $servicedir/vm-boot-tag* $servicedir/vm-boot-protect* $errlog
-fi
-
 # Remove backups if indicated
 if [ $save_backup = 0 ]; then
     chattr -R -f -i $rwbak
@@ -294,4 +289,8 @@ if qsvc vm-boot-protect || qsvc vm-boot-protect-root; then
     umount $rw
 fi
 
+# Keep configs invisible at runtime...
+if ! is_templatevm; then
+    rm -rf "$defdir" $servicedir/vm-boot-tag* $servicedir/vm-boot-protect* $errlog
+fi
 exit 0
