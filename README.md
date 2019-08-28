@@ -119,6 +119,7 @@ Some useful configurations have been supplied in /etc/default/vms:
    * The service can be removed from the system with `cd Qubes-VM-hardening; sudo bash install --uninstall`
 
 ## Releases
+   - v0.9.3  Protect against suid and device nodes
    - v0.9.2  Fix vm-boot-protect mode
    - v0.9.1  Optimized, fix rc order, new "wiperw" tag
    - v0.9.0  Add tags and rc files, protect more home scripts, reinitialize home

@@ -30,7 +30,7 @@ rwbak=$rw/vm-boot-protect
 errlog=/var/run/vm-protect-error
 servicedir=/var/run/qubes-service
 defdir=/etc/default/vms
-version=0.9.2
+version=0.9.3
 
 # Define sh, bash, X and desktop init scripts in /home/user
 # to be protected
@@ -60,7 +60,7 @@ vm_boot_finish() { return; }
 # Remount fs as read-write
 remount_rw() {
     # Begin write operations
-    if [ -e $dev ] && mount -o remount,rw $dev $rw ; then
+    if [ -e $dev ] && mount -o remount,rw,nosuid,nodev $dev $rw ; then
         echo Good rw remount.
     else
         abort_startup RELOCATE "Remount failed!"
@@ -139,7 +139,7 @@ fi
 if qsvc vm-boot-protect || qsvc vm-boot-protect-root; then
     # Mount private volume in temp location
     mkdir -p $rw
-    if [ -e $dev ] && mount -o ro $dev $rw ; then
+    if [ -e $dev ] && mount -o ro,nosuid,nodev $dev $rw ; then
         echo "Good read-only mount."
     else
         echo "Mount failed."
@@ -208,7 +208,7 @@ if qsvc vm-boot-protect-root && [ $rwonly_pers = 1 ]; then
     # Deactivate private.img config dirs
     mkdir -p $rwbak
     for dir in $privdirs $privdirs_add; do # maybe use 'eval' for privdirs quotes/escaping
-        echo "Deactivate $dir"
+        # echo "Deactivate $dir"
         subdir=`echo $dir |sed -r 's|^/rw/||'`
         bakdir="$rwbak/BAK-$subdir"
         origdir="$rwbak/ORIG-$subdir"
@@ -225,9 +225,9 @@ if qsvc vm-boot-protect-root && [ $rwonly_pers = 1 ]; then
         # Populate /home/user w skel files if it was in privdirs
         case "$subdir" in
             "home"|"home/"|"home/user"|"home/user/")
-                echo "Populating home dir"
+                # echo "Populating home dir"
                 rm -rf /home/user $rw/home/user
-                mount --bind $rw/home /home
+                mount --bind -o nosuid,nodev $rw/home /home
                 mkhomedir_helper user
                 umount /home
                 ;;
@@ -246,8 +246,8 @@ if qsvc vm-boot-protect-root && [ $rwonly_pers = 1 ]; then
                     dstfile="`echo $wlfile |sed -r \"s|^/rw/(.+)$|$rw/\1|\"`"
                     dstdir="`dirname \"$dstfile\"`"
                     if [ ! -e "$srcfile" ]; then
-                        echo "Whitelist entry not present in filesystem:"
-                        echo "$srcfile"
+                        # echo "Whitelist entry not present in filesystem:"
+                        # echo "$srcfile"
                         continue
                     # For very large dirs: mv whole dir when entry ends with '/'
                     elif echo $wlfile |grep -q "\/$"; then

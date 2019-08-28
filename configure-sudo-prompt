@@ -17,11 +17,27 @@ See https://qubes-os.org/doc/vm-sudo for manual instructions."
     exit 1
 fi
 
+
+if [ "$1" = "--force" ]; then
+    force=1
+else
+    force=0
+fi
+
+if grep -q '^auth .* dom0\squbes\.VMAuth' /etc/pam.d/common-auth && [ $force = 0 ]; then
+    echo "System appears already configured for sudo prompts."
+    echo "To force re-configuration run 'configure-sudo-prompt --force'."
+    exit 0
+fi
+
+
 echo -e "\n--+  Enable yes/no authentication prompt for sudo  +--
 Warning: Before opting for this change a backup or clone
 should me made of this template!"
-read -p "Configure sudo authentication prompt now? (y/n): " answer
-if [[ $answer == @(y|Y) ]]; then
+if [ $force = 0 ]; then
+    read -p "Configure sudo authentication prompt now? (y/n): " answer
+fi
+if [[ $answer == @(y|Y) ]] || [ $force = 1 ]; then
 
     mv -fb /etc/pam.d/common-auth /etc/pam.d/common-auth~
     cat >/etc/pam.d/common-auth <<_EOF

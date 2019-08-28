@@ -1,6 +1,6 @@
 #!/bin/bash
 # From https://github.com/tasket/Qubes-VM-hardening
-# installer version 0.9.0
+# installer version 0.9.3
 
 set -e
 [ `id -u` -eq 0 ] || exit
@@ -32,6 +32,11 @@ echo "Adding defaults in /etc/default/vms..."
 mkdir -p /etc/default/vms
 # Careful... ownership & mode are not preserved here!
 cp -riv default/vms/* /etc/default/vms
+
+echo "Adding nosuid,nodev options to /etc/fstab..."
+cp /etc/fstab /etc/fstab.bak
+awk '($1~"^/rw/" || $2~"^/rw$") && ($4!~"nosuid" || $4!~"nodev") {$4=$4",nosuid,nodev"}1' \
+    /etc/fstab.bak >/etc/fstab
 
 
 echo -e "\nvm-boot-protect installed!\n"
