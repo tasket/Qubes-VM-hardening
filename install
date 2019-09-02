@@ -41,6 +41,6 @@ awk '($1~"^/rw/" || $2~"^/rw$") && ($4!~"nosuid" || $4!~"nodev") {$4=$4",nosuid,
 
 echo -e "\nvm-boot-protect installed!\n"
 
-bash ./configure-sudo-prompt
+#bash ./configure-sudo-prompt
 exit 0
 

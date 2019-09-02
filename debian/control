@@ -1,0 +1,18 @@
+Source: Qubes-VM-hardening
+Section: admin
+Priority: optional
+Maintainer: Christopher Laprise <tasket@protonmail.com>
+Build-Depends: debhelper (>= 10)
+Standards-Version: 4.1.2
+Homepage: https://www.qubes-os.org
+
+Package: qubes-vm-hardening
+Architecture: all
+Depends: ${misc:Depends} qubes-core-agent
+Description: Prevent malware persistence in Qubes virtual machines.
+ Reconfigures Qubes VM templates to block casual sudo access,
+ protects user startup scripts, and includes a service that can
+ quarantine, whitelist and check file hashes at startup before
+ the /rw volume comes online.
+ 
+ See https://www.github.com/tasket/Qubes-VM-hardening for more info.

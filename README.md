@@ -16,10 +16,11 @@ Leverage Qubes template non-persistence to fend off malware at VM startup: Lock-
 
 ### Installing
 
-1. In a template VM, install the service files
+1. In a template VM, install and configure
    ```
    cd Qubes-VM-hardening
    sudo bash install
+   sudo bash configure-sudo-prompt
    ```
 
 2. Activate by specifying one of the following Qubes services for your VM(s)...
