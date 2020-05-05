@@ -5,26 +5,32 @@ set -e
 [ `id -u` -eq 0 ] || exit
 
 
-if [ ! -e /etc/sudoers.d/qubes ]; then
+if [[ ! -e "/etc/sudoers.d/qubes" ]]; then
     echo "The 'qubes-core-agent-passwordless-root' package does not appear"
     echo "to be present or configured; sudo autoconfiguration skipped."
     exit 0
 fi
 
-if [ ! -e /etc/debian_version ]; then
-    echo "Debian-based template required for sudo autoconfiguration. 
-See https://qubes-os.org/doc/vm-sudo for manual instructions."
+if [[ ! -e "/etc/debian_version" && ! -e "/etc/fedora-release" && ! -e "/etc/arch-release" ]]; then
+    echo "Debian/Fedora/Arch based template required for sudo autoconfiguration."
+    echo "See https://qubes-os.org/doc/vm-sudo for manual instructions."
     exit 1
 fi
 
-
-if [ "$1" = "--force" ]; then
+if [[ "$1" = "--force" ]]; then
     force=1
 else
     force=0
 fi
-
-if grep -q '^auth .* dom0\squbes\.VMAuth' /etc/pam.d/common-auth && [ $force = 0 ]; then
+if [[ -f "/etc/pam.d/common-auth" ]]; then 
+    authFile="common-auth"
+elif [[ -f "/etc/pam.d/system-auth" ]]; then 
+    authFile="system-auth"
+else 
+    echo "pam.d/{common-auth||system-auth}} not found" 
+    exit 1
+fi
+if grep -q '^auth .* dom0\squbes\.VMAuth' /etc/pam.d/$authFile && [ $force = 0 ]; then
     echo "System appears already configured for sudo prompts."
     echo "To force re-configuration run 'configure-sudo-prompt --force'."
     exit 0
@@ -38,15 +44,30 @@ if [ $force = 0 ]; then
     read -p "Configure sudo authentication prompt now? (y/n): " answer
 fi
 if [[ $answer == @(y|Y) ]] || [ $force = 1 ]; then
-
-    mv -fb /etc/pam.d/common-auth /etc/pam.d/common-auth~
-    cat >/etc/pam.d/common-auth <<_EOF
+    mv -fb /etc/pam.d/$authFile /etc/pam.d/$authFile~
+    cat >/etc/pam.d/$authFile <<_EOF
 auth  [success=1 default=ignore]  pam_exec.so seteuid /usr/lib/qubes/qrexec-client-vm dom0 qubes.VMAuth /bin/grep -q ^1$
 auth  requisite  pam_deny.so
 auth  required   pam_permit.so
 _EOF
 
+fi
+if [[ $authFile == "system-auth" ]]; then
+    cat >> /etc/pam.d/$authFile <<_EOF
+account     required      pam_unix.so
 
+password    requisite     pam_pwquality.so try_first_pass local_users_only retry=3 authtok_type=
+password    sufficient    pam_unix.so try_first_pass use_authtok nullok sha512 shadow
+password    required      pam_deny.so
+
+session     optional      pam_keyinit.so revoke
+session     required      pam_limits.so
+-session     optional      pam_systemd.so
+session     [success=1 default=ignore] pam_succeed_if.so service in crond quiet use_uid
+session     required      pam_unix.so  
+_EOF
+
+fi
 #    sed -i 's/^user ALL=(ALL) NOPASSWD: ALL/user ALL=(ALL) ALL/' /etc/sudoers.d/qubes
     sed -i 's/^user/#user/' /etc/sudoers.d/qubes
     echo 'user ALL=(ALL) ALL' >>/etc/sudoers.d/qubes
@@ -68,4 +89,3 @@ Next.... Enable auth prompts in dom0 with the following commands:
     >/etc/qubes-rpc/policy/qubes.VMAuth
 
 '
-fi
