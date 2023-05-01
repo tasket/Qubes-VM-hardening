@@ -16,24 +16,31 @@ Leverage Qubes template non-persistence to fend off malware at VM startup: Lock-
 
 ### Installing
 
-1. In a template VM, install and configure
-   ```
+    1. In dom0, enter the following commands to [enable](https://www.qubes-os.org/doc/vm-sudo/#replacing-password-less-root-access-with-dom0-user-prompt) `sudo` prompts:
+
+```
+   sudo su -
+   echo "/usr/bin/echo 1" >/etc/qubes-rpc/qubes.VMAuth
+   chmod +x /etc/qubes-rpc/qubes.VMAuth
+   echo "@anyvm dom0 ask,default_target=dom0" >/etc/qubes-rpc/policy/qubes.VMAuth
+```
+
+    2. In a template VM, install and configure
+```
    cd Qubes-VM-hardening
    sudo bash install
    sudo bash configure-sudo-prompt
-   ```
+```
 
-2. Activate by specifying one of the following Qubes services for your VM(s)...
+As an alternative, you can skip _'configure-sudo-prompt'_ and Step 1 and instead uninstall the `qubes-core-agent-passwordless-root` package from the template. After doing this, you will have to use `qvm-run -u root` from dom0 to run any VM commands as root.
+
+
+    3. Activate by specifying one of the following Qubes services for your VM(s)...
    - `vm-boot-protect` - Protects executables/scripts within /home/user and may be used with wide array of Qubes VMs including standalone, appVMs, netVMs, Whonix, etc.
    - `vm-boot-protect-root` -  Protects /home/user as above, automatic /rw executable deactivation, whitelisting, checksumming, deployment. Works with appVMs, netVMs, etc. that are _template-based_.
 
    CAUTION: The -root option by default **removes** prior copies of /rw/config, /rw/usrlocal and /rw/bind-dirs. This can delete data!
 
-3. Disable Qubes default passwordless-root. This is necessary for the above measures to work effectively...
-
-   For Debian-based templates the installer will launch `configure-sudo-prompt` automatically to enable a sudo [yes/no prompt](https://www.qubes-os.org/doc/vm-sudo/#replacing-password-less-root-access-with-dom0-user-prompt) that appears in dom0. This handles the template configuration then displays several commands to manually configure dom0 (the dom0 step is required only once, regardless of how many templates you configure). You may test the `configure-sudo-prompt` script in a regular template-based appVM to see if it works, although the effect will be temporary.
-
-   Alternately, you can uninstall the `qubes-core-agent-passwordless-root` package from the template. After doing this, you will have to use `qvm-run -u root` from dom0 to run any VM commands as root.
 
 ---
 
@@ -120,6 +127,7 @@ Some useful configurations have been supplied in /etc/default/vms:
    * The service can be removed from the system with `cd Qubes-VM-hardening; sudo bash install --uninstall`
 
 ## Releases
+   - v0.9.4  Revise dom0 instructions for sudo prompt
    - v0.9.3  Protect against suid and device nodes
    - v0.9.2  Fix vm-boot-protect mode
    - v0.9.1  Optimized, fix rc order, new "wiperw" tag

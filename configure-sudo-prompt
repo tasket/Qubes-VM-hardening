@@ -1,5 +1,6 @@
 #!/bin/bash
 # From https://github.com/tasket/Qubes-VM-hardening
+# installer version 0.9.4
 
 set -e
 [ `id -u` -eq 0 ] || exit
@@ -64,7 +65,8 @@ _EOF
 Next.... Enable auth prompts in dom0 with the following commands:
   [user@dom0 ~]$ sudo su -
   [root@dom0 /]# echo "/usr/bin/echo 1" >/etc/qubes-rpc/qubes.VMAuth
-  [root@dom0 /]# echo "\$anyvm dom0 ask,default_target=dom0" \
+  [root@dom0 /]# chmod +x /etc/qubes-rpc/qubes.VMAuth
+  [root@dom0 /]# echo "@anyvm dom0 ask,default_target=dom0" \
     >/etc/qubes-rpc/policy/qubes.VMAuth
 
 '
